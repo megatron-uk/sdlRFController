@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import sys
 import ctypes
 from sdl2 import *
@@ -237,10 +238,10 @@ def gfxPage(window = None, page = 1):
 	
 	y_pos = 5
 	x_left = 5
-	x_right = x_left + config.BUTTON_WIDTH + 10
+	x_right = config.SCREEN_W - ((2 * x_left) + config.BUTTON_WIDTH)
 	for alignment in config.SCREENS[page]['BUTTON'].keys():
 		
-		y_pos = 0
+		y_pos = 5
 		
 		button_numbers = list(config.SCREENS[page]['BUTTON'][alignment].keys())
 		for button_number in button_numbers:
@@ -254,10 +255,19 @@ def gfxPage(window = None, page = 1):
 			# Right
 			if alignment == "R":
 				x_pos = x_right
-	
-			logger.debug("X:%s Y:%s" % (x_pos, y_pos))
-			btn_rect = SDL_Rect(x_pos, y_pos, btn_surface.contents.w, btn_surface.contents.h)
-			SDL_BlitSurface(btn_surface, None, window.backbuffer, btn_rect)
+				
+			# Is there a bitmap for this button?
+			if button['image'] and os.path.exists(config.ASSETS_FOLDER + button['image']):
+				new_btn_surface = SDL_LoadBMP(str.encode(config.ASSETS_FOLDER + button['image']))
+				g.regS(new_btn_surface)
+				blit_button = new_btn_surface
+				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
+				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)
+			else:
+				# Display text instead of image
+				blit_button = btn_surface
+				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
+				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)	
 			
 			y_pos += config.BUTTON_HEIGHT + 5
 

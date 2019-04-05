@@ -7,7 +7,7 @@ INFO = 1
 # Screen size
 SCREEN_W = 480
 SCREEN_H = 320
-SCREEN_BPP = 16
+SCREEN_BPP = 24
 
 # Default screen fill
 BACKGROUND_COLOUR = {
@@ -39,45 +39,45 @@ SCREENS = {
 		'BUTTON' : { 
 			'L' : {
 				1 : {
-					'text'	: "BLARGH",
-					'image'	: "BLARGH.bmp",
+					'text'	: "MT-32",
+					'image'	: "btn_mt32.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				2 : {
-					'text'	: "WIBBLE",
-					'image'	: "WIBBLE.bmp",
+					'text'	: "SC-8820",
+					'image'	: "btn_sc8820.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				3 : {
-					'text'	: "SPLOO",
-					'image'	: "SPLOO.bmp",
+					'text'	: "SC-55",
+					'image'	: "btn_sc55.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				4 : {
-					'text'	: "PLOP",
-					'image'	: "PLOP.bmp",
+					'text'	: "Mixer",
+					'image'	: None,
 					'codes'	: ["111111", "1010101"],
 				},
 			},
 			'R' : {
 				1 : {
-					'text'	: "BLARGH",
-					'image'	: "BLARGH.bmp",
+					'text'	: "Dreamcast",
+					'image'	: "btn_dreamcast.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				2 : {
-					'text'	: "WIBBLE",
-					'image'	: "WIBBLE.bmp",
+					'text'	: "Saturn",
+					'image'	: "btn_saturn.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				3 : {
-					'text'	: "SPLOO",
-					'image'	: "SPLOO.bmp",
+					'text'	: "Master System",
+					'image'	: "btn_sms.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				4 : {
-					'text'	: "PLOP",
-					'image'	: "PLOP.bmp",
+					'text'	: "Megadrive",
+					'image'	: "btn_megadrive.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 			},

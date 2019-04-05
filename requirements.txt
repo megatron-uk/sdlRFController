@@ -1,5 +1,8 @@
+# Everything needs setuptools
+setuptools
+
 # We draw to the framebuffer using PySDL2 - note that this also requires libSDL2 to be installed
 PySDL2
 
 # Use wiringpi to control the GPIO pins
-wiringpi
+#wiringpi
