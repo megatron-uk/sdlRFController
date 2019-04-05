@@ -273,4 +273,4 @@ def gfxPage(window = None, page = 1):
 
 	g.cleanUp()
 	
-	return True
+	return page

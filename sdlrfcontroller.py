@@ -106,15 +106,18 @@ def sdlRFController():
 				
 				if (event.key.keysym.sym == SDLK_RIGHT) or (clicked == "btn_fwd"):
 					# Forward a page
+					page += 1
 					redraw = True
 						
 				if (event.key.keysym.sym == SDLK_LEFT) or (clicked == "btn_back"):
 					# Back a page
+					if page > 1:
+						page -= 1
 					redraw = True
 						
 				if redraw:
 					# Because of user input, redraw the chosen screen
-					gfxPage(window = window, page = page)
+					page = gfxPage(window = window, page = page)
 					window.update(transition = transition)
 					break
 			else:
