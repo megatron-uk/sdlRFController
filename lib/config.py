@@ -133,4 +133,53 @@ SCREENS = {
 			},
 		},
 	},
+	# Second page
+	3 : {
+		'BUTTON' : { 
+			'L' : {
+				1 : {
+					'text'	: "PC-Engine",
+					'image'	: "btn_pcengine.bmp",
+					'codes'	: ["111111", "1010101"],
+				},
+				2 : {
+					'text'	: "Turbo Duo",
+					'image'	: None,
+					'codes'	: ["111111", "1010101"],
+				},
+				3 : {
+					'text'	: "Atari Jaguar",
+					'image'	: "btn_atarijaguar.bmp",
+					'codes'	: ["111111", "1010101"],
+				},
+				4 : {
+					'text'	: "MSX",
+					'image'	: "btn_msx.bmp",
+					'codes'	: ["111111", "1010101"],
+				},
+			},
+			'R' : {
+				1 : {
+					'text'	: "Amiga 500",
+					'image'	: "btn_amiga500.bmp",
+					'codes'	: ["111111", "1010101"],
+				},
+				2 : {
+					'text'	: "Amiga 1200",
+					'image'	: "btn_amiga1200.bmp",
+					'codes'	: ["111111", "1010101"],
+				},
+				3 : {
+					'text'	: "Amstrad CPC",
+					'image'	: "btn_amstradcpc.bmp",
+					'codes'	: ["111111", "1010101"],
+				},
+				4 : {
+					'text'	: "Atari ST",
+					'image'	: None,
+					'codes'	: ["111111", "1010101"],
+				},
+			},
+		},
+	},
 }
