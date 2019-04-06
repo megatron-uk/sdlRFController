@@ -19,6 +19,7 @@
 import os
 import sys
 import ctypes
+import time
 from sdl2 import *
 from sdl2.sdlttf import *
 
@@ -38,7 +39,9 @@ class gfxData():
 	def __init__(self, window, renderer):
 		self.window = window
 		self.renderer = renderer
-		self.surface = SDL_GetWindowSurface(self.window)
+		
+		# We set up two surfaces so that we can do transition effects between the newly rendered screen
+		# and the old one, if we choose to do so.
 		self.backbuffer = SDL_CreateRGBSurface(0, config.SCREEN_W, config.SCREEN_H, config.SCREEN_BPP,
                                   0,
                                   0,
@@ -56,56 +59,51 @@ class gfxData():
 		# List is populated by each relevant function that draws an element on the screen.
 		self.boxes = []
 		
+		# Cache of surfaces we've loaded from on-disk bitmaps
+		self.cachedSurfaces = {}
+		self.cachedFonts = {}
+		
+		# Store mouse/touchscreen coordinates
 		self.mouse_x = ctypes.c_int(0)
 		self.mouse_y = ctypes.c_int(0)
 		self.mouse_buttons = False
 		
-	
+		self.background_colour = SDL_MapRGB(self.backbuffer.contents.format, config.BACKGROUND_COLOUR['r'], config.BACKGROUND_COLOUR['g'], config.BACKGROUND_COLOUR['b'])
+		self.highlight_colour = SDL_MapRGB(self.backbuffer.contents.format, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'])
+		
 	def mouseRead(self):
+		""" Called whenever an SDL Event of type touchscreen or mouse click is detected, reads and stores pointer position """
 		self.mouse_buttons = SDL_GetMouseState(self.mouse_x, self.mouse_y)
 		logger.debug("Coordinates x:%s y:%s" % (self.mouse_x.value, self.mouse_y.value))
 	
 	def boxPressed(self):
+		""" Compares the values of the current pointer position with any UI elements we've drawn on scree.
+		If any areas have been clicked then the name of the UI element is returned and the main while-loop
+		event handler can deal with it. """
 		for box in self.boxes:
 			if (self.mouse_x.value >= box["x1"]) and (self.mouse_x.value <= box["x2"]):
 				if (self.mouse_y.value >= box["y1"]) and (self.mouse_y.value <= box["y2"]):
 					logger.debug("Button")
-					return box["name"]
+					return box
 		return False
 	
 	def update(self, transition = None):
 		""" Redraw the screen """		
 		
-		if transition is None:	
-			# Without any transitions, just copy backbuffers, then render to texture
-			self.render_texture = SDL_CreateTextureFromSurface(self.renderer, self.backbuffer)
-			SDL_RenderCopy(self.renderer, self.render_texture, None, None)
-			SDL_RenderPresent(self.renderer)
-			SDL_DestroyTexture(self.render_texture)
-		else:
-			if transition == "FADE":
-				GuiTransitionFadeOutIn(self)
-			elif transition == "SLIDEL":
-				GuiTransitionSlideOutIn(self, direction = "LEFT")
-			elif transition == "SLIDER":
-				GuiTransitionSlideOutIn(self, direction = "RIGHT")
-			else:
-				# Unsupported render mode
-				self.render_texture = SDL_CreateTextureFromSurface(self.renderer, self.backbuffer)
-				SDL_RenderCopy(self.renderer, self.render_texture, None, None)
-				SDL_RenderPresent(self.renderer)
-				SDL_DestroyTexture(self.render_texture)
+		# Without any transitions, just copy backbuffers, then render to texture
+		self.render_texture = SDL_CreateTextureFromSurface(self.renderer, self.backbuffer)
+		SDL_RenderCopy(self.renderer, self.render_texture, None, None)
+		SDL_RenderPresent(self.renderer)
+		SDL_DestroyTexture(self.render_texture)		
 				
 		# Lastly, take a copy of the old backbuffer (so we can do effects on it next time round)
 		SDL_BlitSurface(self.backbuffer, None, self.old_backbuffer, None)
-		#SDL_FillRect(self.backbuffer, None, config.BACKGROUND_COLOUR['r'], config.BACKGROUND_COLOUR['g'], config.BACKGROUND_COLOUR['b'])		
-	
+		
 	def clear(self):
-		""" Blank the screen """
+		""" Blank the screen - most likely called at the start of displaying any new page """
 		# Blank the UI element coordinates
 		self.boxes = []
-		
-		SDL_FillRect(self.backbuffer, None, config.BACKGROUND_COLOUR['r'], config.BACKGROUND_COLOUR['g'], config.BACKGROUND_COLOUR['b'])
+		SDL_FillRect(self.backbuffer, None, self.background_colour)
 
 	def sdlWindow(self):
 		return self.window
@@ -199,6 +197,44 @@ def gfxClose():
 	SDL_ShowCursor(SDL_DISABLE)
 	SDL_Quit()
 	
+def gfxLoadBMP(window = None, filename = None):
+	""" Load a bitmap file from disk """
+	
+	if filename in window.cachedSurfaces.keys():
+		logger.debug("Surface cache hit for bitmap [%s]" % filename)
+		surface = window.cachedSurfaces[filename]
+		
+	else:
+		logger.debug("Loading bitmap from disk [%s]" % filename)
+		surface = SDL_LoadBMP(str.encode(filename))
+		window.cachedSurfaces[filename] = surface
+	return surface
+
+def gfxGetTextSurface(window, font, pt, sdl_colour, colour, text):
+	
+	k = str(font) + str(pt) + str(colour) + str(text)
+	if k in window.cachedSurfaces.keys():
+		logger.debug("Surface cache hit for text [%s:%s:%s:%s]" % (font, pt, str(colour), text))
+		surface = window.cachedSurfaces[k]
+	else:
+		logger.debug("Generating text surface from string [%s]" % text)
+		surface = TTF_RenderText_Blended(font, str.encode(text), sdl_colour)
+		window.cachedSurfaces[k] = surface
+	return surface
+
+def gfxGetFont(window, font, pt):
+	
+	k = str(font) + str(pt)
+	if k in window.cachedFonts.keys():
+		logger.debug("Font cache hit for font [%s:%s]" % (font, pt))
+		font = window.cachedFonts[k]
+	else:
+		logger.debug("Loading font from disk [%s]" % font)
+		font = TTF_OpenFont(str.encode(font), pt)
+		window.cachedFonts[k] = font
+	return font
+	
+
 def gfxSplashScreen(window = None):
 	""" Fade in the loading splash screen """
 	
@@ -218,23 +254,18 @@ def gfxSplashScreen(window = None):
 	
 	return True
 	
-def gfxPage(window = None, page = 1):
+def gfxPage(window = None, page = 1, button_clicked = None, flash = False):
 	""" Display a page of clickable buttons """
 	
-	logger.info("Loading page %s" % page)
+	logger.debug("Loading page %s" % page)
 	
 	g = GarbageCleaner()
 	window.clear()
-	
-	logger.debug("Page %s" % page)
-	
+		
 	# Load generic button bitmaps
-	btn_surface = SDL_LoadBMP(str.encode(config.ASSETS['btn_default']))
-	btn_back = SDL_LoadBMP(str.encode(config.ASSETS['btn_back']))
-	btn_fwd = SDL_LoadBMP(str.encode(config.ASSETS['btn_fwd']))
-	g.regS(btn_surface)
-	g.regS(btn_back)
-	g.regS(btn_fwd)
+	btn_surface = gfxLoadBMP(window, config.ASSETS['btn_default'])
+	btn_back = gfxLoadBMP(window, config.ASSETS['btn_back'])
+	btn_fwd =  gfxLoadBMP(window, config.ASSETS['btn_fwd'])
 	
 	# Splat the back nav buttons at the bottom
 	x_pos = 5
@@ -244,6 +275,7 @@ def gfxPage(window = None, page = 1):
 	# Register nav buttons as available on the page for clicks
 	button = {}
 	button['name'] = "btn_back"
+	button['image'] =  config.ASSETS['btn_back']
 	button['x1'] = x_pos
 	button['x2'] = x_pos + btn_back.contents.w
 	button['y1'] = y_pos
@@ -258,6 +290,7 @@ def gfxPage(window = None, page = 1):
 	# Register nav buttons as available on the page for clicks
 	button = {}
 	button['name'] = "btn_fwd"
+	button['image'] =  config.ASSETS['btn_fwd']
 	button['x1'] = x_pos
 	button['x2'] = x_pos + btn_fwd.contents.w
 	button['y1'] = y_pos
@@ -265,9 +298,8 @@ def gfxPage(window = None, page = 1):
 	window.boxes.append(button)
 	
 	# Load font
-	font = TTF_OpenFont(str.encode(config.FONT_BUTTON), config.FONT_NORMAL_PT)
+	font = gfxGetFont(window, config.FONT_BUTTON, config.FONT_BUTTON_PT)
 	font_colour = pixels.SDL_Color(config.FONT_BUTTON_COLOUR['r'], config.FONT_BUTTON_COLOUR['g'], config.FONT_BUTTON_COLOUR['b'])
-	g.regF(font)
 	
 	# Try to load the button configuration for this page
 	y_pos = 0
@@ -289,9 +321,8 @@ def gfxPage(window = None, page = 1):
 				x_pos = x_right
 				
 			# Is there a bitmap for this button?
-			if button['image'] and os.path.exists(config.ASSETS_FOLDER + button['image']):
-				new_btn_surface = SDL_LoadBMP(str.encode(config.ASSETS_FOLDER + button['image']))
-				g.regS(new_btn_surface)
+			if button['image'] and (os.path.exists(config.ASSETS_FOLDER + button['image'])):
+				new_btn_surface = gfxLoadBMP(window, config.ASSETS_FOLDER + button['image'])
 				blit_button = new_btn_surface
 				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
 				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)
@@ -318,12 +349,42 @@ def gfxPage(window = None, page = 1):
 				window.boxes.append(button)
 				
 				# Display text on button
-				text_surface = TTF_RenderText_Blended(font, str.encode(button['text']), font_colour)
-				g.regS(text_surface)
+				text_surface = gfxGetTextSurface(window, font, config.FONT_BUTTON_PT, font_colour, config.FONT_BUTTON_COLOUR, button['text'])
 				btn_rect = SDL_Rect(x_pos + int((blit_button.contents.w - text_surface.contents.w) / 2), y_pos + int((blit_button.contents.h - text_surface.contents.h) / 2), text_surface.contents.w, text_surface.contents.h)
 				SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 			
 			y_pos += config.BUTTON_HEIGHT + 5
+
+	# Are we flashing a clicked button?
+	if flash and (button_clicked is not None):
+		# Render standard screen
+		window.update()
+		
+		# Turn clicked button a different colour
+		select_rect = SDL_Rect(button_clicked['x1'], button_clicked['y1'], button_clicked['x2'] - button_clicked['x1'], button_clicked['y2'] - button_clicked['y1'])
+		SDL_FillRect(window.backbuffer, select_rect, window.highlight_colour)
+
+		# Re-render screen
+		window.update()
+		time.sleep(config.BUTTON_FLASH_DELAY)
+		
+		# Render standard button content again
+		SDL_FillRect(window.backbuffer, select_rect, window.background_colour)
+		
+		# 1. We have an image:
+		if button_clicked['image']:
+			old_btn_surface = gfxLoadBMP(window, config.ASSETS_FOLDER + button_clicked['image'])
+			SDL_BlitSurface(old_btn_surface, None, window.backbuffer, select_rect)
+		
+		else:
+			# 2. We don't have an image - render text again
+			SDL_BlitSurface(btn_surface, None, window.backbuffer, select_rect)
+			text_surface = gfxGetTextSurface(window, font, config.FONT_BUTTON_PT, font_colour, config.FONT_BUTTON_COLOUR, button_clicked['text'])
+			btn_rect = SDL_Rect(select_rect.x + int((select_rect.w - text_surface.contents.w) / 2), select_rect.y + int((select_rect.h - text_surface.contents.h) / 2), text_surface.contents.w, text_surface.contents.h)
+			SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+		
+		# 3.
+		window.update()
 
 	g.cleanUp()
 	

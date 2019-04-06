@@ -24,7 +24,7 @@ import ctypes
 
 from lib import config
 from lib.newlog import newlog
-from lib.buttons import getPages
+from lib.buttons import getPages, getButtonPower, setButtonPower
 
 
 # SDL routines
@@ -89,20 +89,36 @@ def sdlRFController():
 				################################################
 				
 				if event.type == SDL_KEYDOWN:
-					logger.info("Keyboard input")
+					logger.debug("Keyboard input")
+					button = False
 					clicked = False
 				if (event.type == SDL_MOUSEBUTTONDOWN):
 					window.mouseRead()
-					clicked = window.boxPressed()
-					logger.info("Mouse input [box:%s]" % clicked)
+					button = window.boxPressed()
+					if button:
+						clicked = button['name']
+					else:
+						clicked = False
+					logger.debug("Mouse input [box:%s]" % clicked)
 				if (event.type == SDL_FINGERDOWN):
 					window.mouseRead()
-					clicked = window.boxPressed()
-					logger.info("Touch input [box:%s]" % clicked)
+					if button:
+						clicked = button['name']
+					else:
+						clicked = False
+					logger.debug("Touch input [box:%s]" % clicked)
 					
 				if clicked == "deviceClick":
+					# Flash the button to indicate click
+					gfxPage(window, page = page, button_clicked = button, flash = True)
+					
+					# Run the device RF power command
+					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
+					setButtonPower(button, state = "ON")
+				
+				if (clicked == "btn_fwd") or (clicked == "btn_back"):
 					# Run RF tools to send an on or off signal
-					pass
+					gfxPage(window, page = page, button_clicked = button, flash = True)
 				
 				if (event.key.keysym.sym == SDLK_q):
 					# Exit from the running application

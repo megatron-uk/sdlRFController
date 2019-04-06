@@ -20,6 +20,9 @@
 from lib import config
 from lib.newlog import newlog
 
+# Set up a logger for this file
+logger = newlog(__file__)
+
 def getPages():
 	""" Return screen list """
 	
@@ -46,3 +49,15 @@ def getButtons(page = 1, align = "L"):
 			buttons = []
 		
 	return buttons
+	
+def getButtonPower(button):
+	""" Return the power state of a device represented by a button """
+	
+	pass
+
+def setButtonPower(button, state = "ON"):
+	""" Send a power state message to a device represented by a button """
+	
+	logger.info("Sending power %s signal" % state)
+	
+	pass
