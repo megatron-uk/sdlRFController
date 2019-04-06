@@ -22,8 +22,19 @@ ASSETS_FOLDER = "./assets/"
 # Flat graphics assets
 ASSETS = {
         'splash' 		: ASSETS_FOLDER + 'splash.bmp', 
-        'btn_default'	: ASSETS_FOLDER + 'btn_default.bmp'
+        'btn_default'	: ASSETS_FOLDER + 'btn_default.bmp',
+        'btn_fwd'	: ASSETS_FOLDER + 'btn_default_fwd.bmp',
+        'btn_back'	: ASSETS_FOLDER + 'btn_default_back.bmp',
 }
+
+# Font files
+FONT_NORMAL = ASSETS_FOLDER + "verdana.ttf"
+FONT_NORMAL_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
+FONT_NORMAL_PT = 28
+
+FONT_BUTTON = ASSETS_FOLDER + "verdanab.ttf"
+FONT_BUTTON_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
+FONT_BUTTON_PT = 28
 
 # Screen layout and configuration
 MAX_ROWS = 5
@@ -144,7 +155,7 @@ SCREENS = {
 				},
 				2 : {
 					'text'	: "Turbo Duo",
-					'image'	: None,
+					'image'	: "btn_pcenginecd.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 				3 : {
@@ -176,7 +187,7 @@ SCREENS = {
 				},
 				4 : {
 					'text'	: "Atari ST",
-					'image'	: None,
+					'image'	: "btn_atarist.bmp",
 					'codes'	: ["111111", "1010101"],
 				},
 			},

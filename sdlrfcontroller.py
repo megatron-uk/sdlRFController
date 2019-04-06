@@ -24,6 +24,7 @@ import ctypes
 
 from lib import config
 from lib.newlog import newlog
+from lib.buttons import getPages
 
 
 # SDL routines
@@ -57,7 +58,7 @@ def sdlRFController():
 	# Fade in/out a loading screen
 	gfxSplashScreen(window)
 	window.update()
-	time.sleep(2)
+	time.sleep(0.5)
 	window.clear()
 	window.update()
 	
@@ -98,6 +99,10 @@ def sdlRFController():
 					window.mouseRead()
 					clicked = window.boxPressed()
 					logger.info("Touch input [box:%s]" % clicked)
+					
+				if clicked == "deviceClick":
+					# Run RF tools to send an on or off signal
+					pass
 				
 				if (event.key.keysym.sym == SDLK_q):
 					# Exit from the running application
@@ -106,13 +111,18 @@ def sdlRFController():
 				
 				if (event.key.keysym.sym == SDLK_RIGHT) or (clicked == "btn_fwd"):
 					# Forward a page
-					page += 1
+					if page < getPages()[-1]:
+						page += 1
+					else:
+						page = 1
 					redraw = True
 						
 				if (event.key.keysym.sym == SDLK_LEFT) or (clicked == "btn_back"):
 					# Back a page
 					if page > 1:
 						page -= 1
+					else:
+						page = getPages()[-1]
 					redraw = True
 						
 				if redraw:

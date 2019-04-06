@@ -24,6 +24,7 @@ from sdl2.sdlttf import *
 
 from lib import config
 from lib.newlog import newlog
+from lib.buttons import getPages, getButtons
 
 # SDL routines
 from sdl2 import *
@@ -225,28 +226,59 @@ def gfxPage(window = None, page = 1):
 	g = GarbageCleaner()
 	window.clear()
 	
-	pages = list(config.SCREENS.keys())
-	if page not in pages:
-		page = 1
-	logger.info("Page %s" % page)
+	logger.debug("Page %s" % page)
 	
-	# Load generic button bitmap
+	# Load generic button bitmaps
 	btn_surface = SDL_LoadBMP(str.encode(config.ASSETS['btn_default']))
+	btn_back = SDL_LoadBMP(str.encode(config.ASSETS['btn_back']))
+	btn_fwd = SDL_LoadBMP(str.encode(config.ASSETS['btn_fwd']))
 	g.regS(btn_surface)
+	g.regS(btn_back)
+	g.regS(btn_fwd)
+	
+	# Splat the back nav buttons at the bottom
+	x_pos = 5
+	y_pos = config.SCREEN_H - btn_back.contents.h
+	back_rect = SDL_Rect(x_pos, y_pos, btn_back.contents.w, btn_back.contents.h)
+	SDL_BlitSurface(btn_back, None, window.backbuffer, back_rect)
+	# Register nav buttons as available on the page for clicks
+	button = {}
+	button['name'] = "btn_back"
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_back.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_back.contents.h
+	window.boxes.append(button)
+	
+	# Splat the forward nav buttons at the bottom
+	x_pos = config.SCREEN_W - (btn_fwd.contents.w +5)
+	y_pos = config.SCREEN_H - btn_fwd.contents.h
+	fwd_rect = SDL_Rect(x_pos, y_pos, btn_fwd.contents.w, btn_back.contents.h)
+	SDL_BlitSurface(btn_fwd, None, window.backbuffer, fwd_rect)
+	# Register nav buttons as available on the page for clicks
+	button = {}
+	button['name'] = "btn_fwd"
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_fwd.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_fwd.contents.h
+	window.boxes.append(button)
+	
+	# Load font
+	font = TTF_OpenFont(str.encode(config.FONT_BUTTON), config.FONT_NORMAL_PT)
+	font_colour = pixels.SDL_Color(config.FONT_BUTTON_COLOUR['r'], config.FONT_BUTTON_COLOUR['g'], config.FONT_BUTTON_COLOUR['b'])
+	g.regF(font)
 	
 	# Try to load the button configuration for this page
-	
-	y_pos = 5
+	y_pos = 0
 	x_left = 5
 	x_right = config.SCREEN_W - ((2 * x_left) + config.BUTTON_WIDTH)
-	for alignment in config.SCREENS[page]['BUTTON'].keys():
+	for alignment in ["L", "R"]:
 		
-		y_pos = 5
-		
-		button_numbers = list(config.SCREENS[page]['BUTTON'][alignment].keys())
-		for button_number in button_numbers:
-			button = config.SCREENS[page]['BUTTON'][alignment][button_number]
-			logger.info("Button %s.%s" % (page, button_number))
+		y_pos = 0
+		buttons = getButtons(page, alignment)
+		for button in buttons:
+			logger.debug("Button %s.%s.%s:%s" % (page, button['align'], button['number'], button['text']))
 	
 			# Left
 			if alignment == "L":
@@ -263,11 +295,33 @@ def gfxPage(window = None, page = 1):
 				blit_button = new_btn_surface
 				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
 				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)
+				
+				# Register this button as available on the page for clicks
+				button['name'] = "deviceClick"
+				button['x1'] = x_pos
+				button['x2'] = x_pos + blit_button.contents.w
+				button['y1'] = y_pos
+				button['y2'] = y_pos + blit_button.contents.h
+				window.boxes.append(button)
 			else:
-				# Display text instead of image
+				# Display default button
 				blit_button = btn_surface
 				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
-				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)	
+				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)
+				
+				# Register this button as available on the page for clicks
+				button['name'] = "deviceClick"
+				button['x1'] = x_pos
+				button['x2'] = x_pos + blit_button.contents.w
+				button['y1'] = y_pos
+				button['y2'] = y_pos + blit_button.contents.h
+				window.boxes.append(button)
+				
+				# Display text on button
+				text_surface = TTF_RenderText_Blended(font, str.encode(button['text']), font_colour)
+				g.regS(text_surface)
+				btn_rect = SDL_Rect(x_pos + int((blit_button.contents.w - text_surface.contents.w) / 2), y_pos + int((blit_button.contents.h - text_surface.contents.h) / 2), text_surface.contents.w, text_surface.contents.h)
+				SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 			
 			y_pos += config.BUTTON_HEIGHT + 5
 
