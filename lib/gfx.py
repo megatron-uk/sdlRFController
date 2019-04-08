@@ -71,10 +71,11 @@ class gfxData():
 		self.background_colour = SDL_MapRGB(self.backbuffer.contents.format, config.BACKGROUND_COLOUR['r'], config.BACKGROUND_COLOUR['g'], config.BACKGROUND_COLOUR['b'])
 		self.highlight_colour = SDL_MapRGB(self.backbuffer.contents.format, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'])
 		
-	def mouseRead(self):
+	def mouseRead(self, event):
 		""" Called whenever an SDL Event of type touchscreen or mouse click is detected, reads and stores pointer position """
 		self.mouse_buttons = SDL_GetMouseState(self.mouse_x, self.mouse_y)
 		logger.debug("Coordinates x:%s y:%s" % (self.mouse_x.value, self.mouse_y.value))
+		logger.debug("Clicks: %s" % event.button.clicks)
 	
 	def boxPressed(self):
 		""" Compares the values of the current pointer position with any UI elements we've drawn on scree.
@@ -254,7 +255,7 @@ def gfxSplashScreen(window = None):
 	
 	return True
 	
-def gfxPage(window = None, page = 1, button_clicked = None, flash = False):
+def gfxPage(window = None, page = 1, button_clicked = None, flash = False, power_mode = "ON"):
 	""" Display a page of clickable buttons """
 	
 	logger.debug("Loading page %s" % page)
@@ -266,6 +267,14 @@ def gfxPage(window = None, page = 1, button_clicked = None, flash = False):
 	btn_surface = gfxLoadBMP(window, config.ASSETS['btn_default'])
 	btn_back = gfxLoadBMP(window, config.ASSETS['btn_back'])
 	btn_fwd =  gfxLoadBMP(window, config.ASSETS['btn_fwd'])
+	
+	# Power state indicator
+	if power_mode == "ON":
+		btn_power =  gfxLoadBMP(window, config.ASSETS['power_on'])
+		btn_power_image = config.ASSETS['power_on']
+	if power_mode == "OFF":
+		btn_power =  gfxLoadBMP(window, config.ASSETS['power_off'])
+		btn_power_image = config.ASSETS['power_off']
 	
 	# Splat the back nav buttons at the bottom
 	x_pos = 5
@@ -295,6 +304,20 @@ def gfxPage(window = None, page = 1, button_clicked = None, flash = False):
 	button['x2'] = x_pos + btn_fwd.contents.w
 	button['y1'] = y_pos
 	button['y2'] = y_pos + btn_fwd.contents.h
+	window.boxes.append(button)
+	
+	# Splat the power mode buttons at the bottom
+	x_pos = int(config.SCREEN_W / 2) - int(btn_power.contents.w / 2)
+	y_pos = config.SCREEN_H - btn_power.contents.h
+	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
+	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
+	button = {}
+	button['name'] = "btn_power"
+	button['image'] =  btn_power_image
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_power.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_power.contents.h
 	window.boxes.append(button)
 	
 	# Load font

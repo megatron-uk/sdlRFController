@@ -69,6 +69,9 @@ def sdlRFController():
 	# SDL event handler
 	event = SDL_Event()
 	
+	# Default switch mode
+	power_mode = "ON"
+	
 	# Event handler
 	while running:
 		redraw = False
@@ -93,7 +96,7 @@ def sdlRFController():
 					button = False
 					clicked = False
 				if (event.type == SDL_MOUSEBUTTONDOWN):
-					window.mouseRead()
+					window.mouseRead(event)
 					button = window.boxPressed()
 					if button:
 						clicked = button['name']
@@ -101,7 +104,7 @@ def sdlRFController():
 						clicked = False
 					logger.debug("Mouse input [box:%s]" % clicked)
 				if (event.type == SDL_FINGERDOWN):
-					window.mouseRead()
+					window.mouseRead(event)
 					if button:
 						clicked = button['name']
 					else:
@@ -110,15 +113,27 @@ def sdlRFController():
 					
 				if clicked == "deviceClick":
 					# Flash the button to indicate click
-					gfxPage(window, page = page, button_clicked = button, flash = True)
+					gfxPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					
 					# Run the device RF power command
 					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
-					setButtonPower(button, state = "ON")
+					setButtonPower(button, state = power_mode)
 				
 				if (clicked == "btn_fwd") or (clicked == "btn_back"):
-					# Run RF tools to send an on or off signal
-					gfxPage(window, page = page, button_clicked = button, flash = True)
+					gfxPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+				
+				if (clicked == "btn_power"):
+					# Flash the button to indicate click
+					gfxPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+				
+					# Change power button mode
+					if power_mode == "ON":
+						power_mode = "OFF"
+					else:
+						power_mode = "ON"
+						
+					# Redraw screen
+					redraw = True
 				
 				if (event.key.keysym.sym == SDLK_q):
 					# Exit from the running application
@@ -143,7 +158,7 @@ def sdlRFController():
 						
 				if redraw:
 					# Because of user input, redraw the chosen screen
-					page = gfxPage(window = window, page = page)
+					page = gfxPage(window = window, page = page, power_mode = power_mode)
 					window.update(transition = transition)
 					break
 			else:
