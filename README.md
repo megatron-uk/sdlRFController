@@ -222,3 +222,84 @@ Presuming our amplifier, mixer deck, speakers and other audio output equipment e
 That would generate a list of individual `poweron` events for any device tagged as *"speaker system", and then finally send a power on signal to the MIDI device.
 
 As the Energenie remote sends discrete *ON* or *OFF* codes, it is safe to send the *ON* code to a device that is already powered on, so we don't need to *(and in fact the system is one-way signalling so we cannot)* check the power status of a device before we send the signal.
+
+## Placing Buttons on Screen
+
+The arrangement of buttons on the screen interface is achieved through *pages*, *columns* and *rows*.
+
+Every *page* on the device (numbered from **1** upwards) is split in to two columns; **left** (referred to as *"L"*) and **right** (referred to as *"R"*).
+
+There are (up to) 4 rows of buttons (each button in a column is numbered from **1** to **4**).
+
+The layout is managed through the `libs/config.py` file, via the variable `SCREENS`.
+
+Here is a sample layout for 1 page, 2 columns (3 buttons on the left, 1 on the right):
+
+```
+SCREENS = {
+	# First page
+	1 : {
+		'BUTTON' : { 
+			'L' : {
+				1 : {
+					'text'	: "Monitor",
+					'image'	: None,
+					'poweron' : [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},	# Turn this remote socket off
+					],
+					'poweroff' : [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},	# Turn this remote socket off
+					],
+					'remote'	: 0x0000,
+					'socket'	: 1,
+					'tags'	: [],
+				},
+				2 : {
+					'text'	: "Amplifier",
+					'image'	: None,
+					'poweron' : [
+						{'remote' : 0x0000, 'socket' : 2, 'action' : "ON"},	# Turn this remote socket off
+					],
+					'poweroff' : [
+						{'remote' : 0x0000, 'socket' : 2, 'action' : "OFF"},	# Turn this remote socket off
+					],
+					'remote'	: 0x0000,
+					'socket'	: 2,
+					'tags'	: [],
+				},
+				3 : {
+					'text'	: "Upscaler",
+					'image'	: None,
+					'poweron' : [
+						{'remote' : 0x0000, 'socket' : 3, 'action' : "ON"},	# Turn this remote socket off
+					],
+					'poweroff' : [
+						{'remote' : 0x0000, 'socket' : 3, 'action' : "OFF"},	# Turn this remote socket off
+					],
+					'remote'	: 0x0000,
+					'socket'	: 3,
+					'tags'	: [],
+				},
+			},
+			'R' : {
+				1 : {
+					'text'	: "Sega Megadrive",
+					'image'	: None,
+					'poweron' : [
+						{'remote' : 0x0000, 'socket' : 4, 'action' : "ON"},	# Turn this remote socket off
+					],
+					'poweroff' : [
+						{'remote' : 0x0000, 'socket' : 4, 'action' : "OFF"},	# Turn this remote socket off
+					],
+					'remote'	: 0x0000,
+					'socket'	: 4,
+					'tags'	: [],
+				},
+			},
+		},
+	},
+	# 2: {} # Page 2 doesn't exist in this layout
+}
+```
+
+You are free to layout buttons on pages as you see fit. In my own use case I'm putting all the video games together on one page, display equipment on another, sound and music on another, etc.
