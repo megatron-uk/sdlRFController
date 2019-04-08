@@ -62,26 +62,37 @@ SCREENS = {
 				1 : {
 					'text'	: "MT-32",
 					'image'	: "btn_mt32.bmp",
+					'poweron' : [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},	# Turn this remote socket on
+						{'tags' : ["speakers"], 'action' : "ON"},			# Turn on any device with a tag of 'speakers'
+					],
+					'poweroff' : [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},	# Turn this remote socket off
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
+					'tags'	: ["midi"],
 				},
 				2 : {
 					'text'	: "SC-8820",
 					'image'	: "btn_sc8820.bmp",
 					'remote'	: 0x0000,
 					'socket'	: 1,
+					'tags'	: ["midi"],
 				},
 				3 : {
 					'text'	: "SC-55",
 					'image'	: "btn_sc55.bmp",
 					'remote'	: 0x0000,
 					'socket'	: 1,
+					'tags'	: ["midi"],
 				},
 				4 : {
 					'text'	: "Mixer",
 					'image'	: None,
 					'remote'	: 0x0000,
 					'socket'	: 1,
+					'tags'	: ["speakers"],
 				},
 			},
 			'R' : {
@@ -160,12 +171,6 @@ SCREENS = {
 					'remote'	: 0x0000,
 					'socket'	: 1,
 				},
-				4 : {
-					'text'	: "Megadrive",
-					'image'	: None,
-					'remote'	: 0x0000,
-					'socket'	: 1,
-				},
 			},
 		},
 	},
@@ -220,6 +225,64 @@ SCREENS = {
 				4 : {
 					'text'	: "Atari ST",
 					'image'	: "btn_atarist.bmp",
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+			},
+		},
+	},
+	# Second page
+	4 : {
+		'BUTTON' : { 
+			'L' : {
+				1 : {
+					'text'	: "PC-9821",
+					'image'	: "btn_pc9821.bmp",
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+				2 : {
+					'text'	: "Mac IICi",
+					'image'	: "btn_maciici.bmp",
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+				3 : {
+					'text'	: "Risc PC 700",
+					'image'	: None,
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+				4 : {
+					'text'	: "SNES",
+					'image'	: "btn_snes.bmp",
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+			},
+			'R' : {
+				1 : {
+					'text'	: "HDMI KVM",
+					'image'	: None,
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+				2 : {
+					'text'	: "VGA KVM",
+					'image'	: None,
+					'remote'	: 0x0000,
+					'socket'	: 1,
+				},
+				3 : {
+					'text'	: "Speakers",
+					'image'	: None,
+					'remote'	: 0x0000,
+					'socket'	: 1,
+					'tags'	: ["speakers"],
+				},
+				4 : {
+					'text'	: "Gamecube",
+					'image'	: "btn_gamecube.bmp",
 					'remote'	: 0x0000,
 					'socket'	: 1,
 				},
