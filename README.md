@@ -67,9 +67,11 @@ mkdir tmp
 cd tmp
 git clone https://github.com/whaleygeek/pyenergenie
 cd ..
-mv pyenergenie/energenie .
+mv tmp/pyenergenie/energenie .
 rm -rf tmp
 ```
+
+Of course, you are free to place the `pyenergenie` directory anywhere you want and just symlink it in, if you wish.
 
 That will leave you with just the `energenie` sub directory of the pyenergenie project. You then have to compile the C driver:
 
