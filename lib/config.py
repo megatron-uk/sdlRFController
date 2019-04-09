@@ -1,5 +1,8 @@
 APPLICATION_NAME = "sdlRFController"
 
+# Time between screen refresh/event checks
+REFRESH_TIME = 0.2
+
 # Enable more verbose output
 DEBUG = 1
 INFO = 1

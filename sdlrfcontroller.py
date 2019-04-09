@@ -59,7 +59,7 @@ def sdlRFController():
 	# Fade in/out a loading screen
 	gfxSplashScreen(window)
 	window.update()
-	time.sleep(0.5)
+	time.sleep(1.5)
 	window.clear()
 	window.update()
 	
@@ -79,7 +79,7 @@ def sdlRFController():
 	
 	# Event handler
 	while running:
-		time.sleep(0.1)
+		time.sleep(config.REFRESH_TIME)
 		while SDL_PollEvent(ctypes.byref(event)) != 0:
 			
 			if event.type == SDL_QUIT:
@@ -125,11 +125,6 @@ def sdlRFController():
 					redraw = False
 					break
 				
-				if (screen == "page") and ((clicked == "btn_fwd") or (clicked == "btn_back")):
-					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
-					redraw = True
-					break
-				
 				if (clicked == "btn_config"):
 					if screen == "status":
 						# Go back to main pages
@@ -145,7 +140,7 @@ def sdlRFController():
 						screen = "status"
 						redraw = True
 				
-				if (clicked == "btn_power"):
+				if (screen == "page") and (clicked == "btn_power"):
 					# Flash the button to indicate click
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 				
@@ -166,6 +161,8 @@ def sdlRFController():
 				
 				if (screen == "page") and ((event.key.keysym.sym == SDLK_RIGHT) or (clicked == "btn_fwd")):
 					# Forward a page
+					button = window.boxPressedByName(name = "btn_fwd")
+					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					if page < getPages()[-1]:
 						page += 1
 					else:
@@ -175,6 +172,8 @@ def sdlRFController():
 						
 				if (screen == "page") and ((event.key.keysym.sym == SDLK_LEFT) or (clicked == "btn_back")):
 					# Back a page
+					button = window.boxPressedByName(name = "btn_back")
+					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					if page > 1:
 						page -= 1
 					else:

@@ -88,6 +88,13 @@ class gfxData():
 					return box
 		return False
 	
+	def boxPressedByName(self, name = None):
+		""" Return a button from the list of current boxes, if it exists by name """
+		for box in self.boxes:
+			if box['name'] == name:
+				return box
+		return False
+	
 	def update(self, transition = None):
 		""" Redraw the screen """		
 		

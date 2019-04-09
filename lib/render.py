@@ -20,6 +20,7 @@ import os
 import sys
 import ctypes
 import time
+import datetime
 import psutil
 from sdl2 import *
 from sdl2.sdlttf import *
@@ -132,11 +133,51 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	font = gfxGetFont(window, config.FONT_INFO, config.FONT_INFO_PT)
 	font_colour = pixels.SDL_Color(config.FONT_INFO_COLOUR['r'], config.FONT_INFO_COLOUR['g'], config.FONT_INFO_COLOUR['b'])
 	
-	text_surface = gfxGetText(window, font, config.FONT_INFO_PT, font_colour, config.FONT_INFO_COLOUR, "IP: 192.168.1.1")
+	# Text start positions
 	x_pos = 0
 	y_pos = 0
+	
+	# IP Address
+	na = psutil.net_if_addrs()
+	ns = psutil.net_if_stats()
+	text_ip = "IP: "
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_ip), font_colour)
+	g.regS(text_surface)
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# CPU load
+	text_cpu = "CPU: %s" % psutil.cpu_percent(interval = config.REFRESH_TIME) 
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_cpu), font_colour)
+	g.regS(text_surface)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# Uptime
+	ts = int(time.mktime(datetime.datetime.now().timetuple())) - psutil.boot_time()
+	text_time = "Uptime: %s sec" % ts
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_time), font_colour)
+	g.regS(text_surface)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# Current RAM use
+	process = psutil.Process(os.getpid())
+	text_memory_size = "Process: %s bytes" % process.memory_info().rss
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_memory_size), font_colour)
+	g.regS(text_surface)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# Total clicks
+	# Kernel ver
+	# Python ver
+	# SDL ver & driver
+	
+	
 	
 	g.cleanUp()
 	window.update()
