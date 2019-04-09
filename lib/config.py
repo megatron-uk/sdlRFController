@@ -28,11 +28,12 @@ ASSETS_FOLDER = "./assets/"
 # Flat graphics assets
 ASSETS = {
         'splash' 		: ASSETS_FOLDER + 'splash.bmp', 
-        'power_on'		: ASSETS_FOLDER + 'power_on.bmp',
+        'power_on'		: ASSETS_FOLDER + 'power_on2.bmp',
         'power_off'		: ASSETS_FOLDER + 'power_off.bmp',
+        'btn_config'	: ASSETS_FOLDER + 'btn_config.bmp',
         'btn_default'	: ASSETS_FOLDER + 'btn_default.bmp',
-        'btn_fwd'	: ASSETS_FOLDER + 'btn_default_fwd.bmp',
-        'btn_back'	: ASSETS_FOLDER + 'btn_default_back.bmp',
+        'btn_fwd'	: ASSETS_FOLDER + 'btn_default_fwd2.bmp',
+        'btn_back'	: ASSETS_FOLDER + 'btn_default_back2.bmp',
 }
 
 # Font files
@@ -43,6 +44,10 @@ FONT_NORMAL_PT = 28
 FONT_BUTTON = ASSETS_FOLDER + "verdanab.ttf"
 FONT_BUTTON_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
 FONT_BUTTON_PT = 28
+
+FONT_INFO = ASSETS_FOLDER + "verdana.ttf"
+FONT_INFO_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
+FONT_INFO_PT = 16
 
 # Screen layout and configuration
 MAX_ROWS = 5

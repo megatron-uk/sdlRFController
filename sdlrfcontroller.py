@@ -29,7 +29,8 @@ from lib.buttons import getPages, getButtonPower, setButtonPower
 
 # SDL routines
 from sdl2 import *
-from lib.gfx import *
+from lib.gfx import gfxInit, gfxClose, gfxSplashScreen
+from lib.render import renderPage, renderStatus
 
 # Set up a logger for this file
 logger = newlog(__file__)
@@ -63,7 +64,7 @@ def sdlRFController():
 	window.update()
 	
 	# Show page 1
-	gfxPage(window = window, page = page)
+	renderPage(window = window, page = page)
 	window.update(transition = transition)
 	
 	# SDL event handler
@@ -71,11 +72,14 @@ def sdlRFController():
 	
 	# Default switch mode
 	power_mode = "ON"
+	screen = "page"
+	button = False
+	clicked = False
+	redraw = True
 	
 	# Event handler
 	while running:
-		redraw = False
-		time.sleep(0.05)
+		time.sleep(0.1)
 		while SDL_PollEvent(ctypes.byref(event)) != 0:
 			
 			if event.type == SDL_QUIT:
@@ -113,18 +117,37 @@ def sdlRFController():
 					
 				if clicked == "deviceClick":
 					# Flash the button to indicate click
-					gfxPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					
 					# Run the device RF power command
 					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
 					setButtonPower(button, state = power_mode)
+					redraw = False
+					break
 				
-				if (clicked == "btn_fwd") or (clicked == "btn_back"):
-					gfxPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+				if (screen == "page") and ((clicked == "btn_fwd") or (clicked == "btn_back")):
+					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+					redraw = True
+					break
+				
+				if (clicked == "btn_config"):
+					if screen == "status":
+						# Go back to main pages
+						renderStatus(window, button_clicked = button, flash = True, power_mode = power_mode)
+						renderPage(window, page = page, button_clicked = button, flash = False, power_mode = power_mode)
+						screen = "page"
+						redraw = False
+						break
+					else:
+						# Draw status screen
+						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+						renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
+						screen = "status"
+						redraw = True
 				
 				if (clicked == "btn_power"):
 					# Flash the button to indicate click
-					gfxPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 				
 					# Change power button mode
 					if power_mode == "ON":
@@ -134,36 +157,43 @@ def sdlRFController():
 						
 					# Redraw screen
 					redraw = True
+					break
 				
 				if (event.key.keysym.sym == SDLK_q):
 					# Exit from the running application
 					running = False
 					break
 				
-				if (event.key.keysym.sym == SDLK_RIGHT) or (clicked == "btn_fwd"):
+				if (screen == "page") and ((event.key.keysym.sym == SDLK_RIGHT) or (clicked == "btn_fwd")):
 					# Forward a page
 					if page < getPages()[-1]:
 						page += 1
 					else:
 						page = 1
 					redraw = True
+					break
 						
-				if (event.key.keysym.sym == SDLK_LEFT) or (clicked == "btn_back"):
+				if (screen == "page") and ((event.key.keysym.sym == SDLK_LEFT) or (clicked == "btn_back")):
 					# Back a page
 					if page > 1:
 						page -= 1
 					else:
 						page = getPages()[-1]
 					redraw = True
-						
-				if redraw:
-					# Because of user input, redraw the chosen screen
-					page = gfxPage(window = window, page = page, power_mode = power_mode)
-					window.update(transition = transition)
 					break
+						
 			else:
 				# Unsupported event type - just redraw the current screen
 				pass
+			
+		if redraw:
+			# Because of user input, redraw the chosen screen
+			if screen == "page":
+				renderPage(window, page = page, button_clicked = button, flash = False, power_mode = power_mode)
+				redraw = False
+			if screen == "status":
+				renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
+			window.update(transition = transition)
 		
 	# Clean up the SDL libary
 	gfxClose()

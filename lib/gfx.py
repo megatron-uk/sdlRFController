@@ -151,11 +151,6 @@ def gfxInit():
 		driver_name = SDL_GetCurrentVideoDriver()
 		if driver_name:
 			logger.info("SDL Driver type is %s" % bytes.decode(driver_name))
-			logger.debug("Checking available display modes...")
-			num_modes = SDL_GetNumDisplayModes(0)
-			for i in range(0, num_modes):
-				current_mode = SDL_GetDisplayMode(0, i, mode)
-				logger.debug("Mode - %sx%s @ %sHz" % (mode.w, mode.h, mode.refresh_rate))
 		else:
 			logger.error("Unable to initialise an SDL driver")
 			logger.warn("Check the environment variable SDL_VIDEODRIVER for an incorrect/unavailable driver type")
@@ -195,11 +190,14 @@ def gfxInit():
 		return False
 	
 def gfxClose():
+	""" Unload SDL """
+	
 	SDL_ShowCursor(SDL_DISABLE)
+	TTF_Quit()
 	SDL_Quit()
 	
 def gfxLoadBMP(window = None, filename = None):
-	""" Load a bitmap file from disk """
+	""" Load a bitmap file from disk, or from an already cached surface object """
 	
 	if filename in window.cachedSurfaces.keys():
 		logger.debug("Surface cache hit for bitmap [%s]" % filename)
@@ -211,7 +209,8 @@ def gfxLoadBMP(window = None, filename = None):
 		window.cachedSurfaces[filename] = surface
 	return surface
 
-def gfxGetTextSurface(window, font, pt, sdl_colour, colour, text):
+def gfxGetText(window, font, pt, sdl_colour, colour, text):
+	""" Generate a text surface, or load from an already cached text surface object """
 	
 	k = str(font) + str(pt) + str(colour) + str(text)
 	if k in window.cachedSurfaces.keys():
@@ -224,6 +223,7 @@ def gfxGetTextSurface(window, font, pt, sdl_colour, colour, text):
 	return surface
 
 def gfxGetFont(window, font, pt):
+	""" Load a font from disk, or from an already cached font object """
 	
 	k = str(font) + str(pt)
 	if k in window.cachedFonts.keys():
@@ -255,160 +255,3 @@ def gfxSplashScreen(window = None):
 	
 	return True
 	
-def gfxPage(window = None, page = 1, button_clicked = None, flash = False, power_mode = "ON"):
-	""" Display a page of clickable buttons """
-	
-	logger.debug("Loading page %s" % page)
-	
-	g = GarbageCleaner()
-	window.clear()
-		
-	# Load generic button bitmaps
-	btn_surface = gfxLoadBMP(window, config.ASSETS['btn_default'])
-	btn_back = gfxLoadBMP(window, config.ASSETS['btn_back'])
-	btn_fwd =  gfxLoadBMP(window, config.ASSETS['btn_fwd'])
-	
-	# Power state indicator
-	if power_mode == "ON":
-		btn_power =  gfxLoadBMP(window, config.ASSETS['power_on'])
-		btn_power_image = config.ASSETS['power_on']
-	if power_mode == "OFF":
-		btn_power =  gfxLoadBMP(window, config.ASSETS['power_off'])
-		btn_power_image = config.ASSETS['power_off']
-	
-	# Splat the back nav buttons at the bottom
-	x_pos = 5
-	y_pos = config.SCREEN_H - btn_back.contents.h
-	back_rect = SDL_Rect(x_pos, y_pos, btn_back.contents.w, btn_back.contents.h)
-	SDL_BlitSurface(btn_back, None, window.backbuffer, back_rect)
-	# Register nav buttons as available on the page for clicks
-	button = {}
-	button['name'] = "btn_back"
-	button['image'] =  config.ASSETS['btn_back']
-	button['x1'] = x_pos
-	button['x2'] = x_pos + btn_back.contents.w
-	button['y1'] = y_pos
-	button['y2'] = y_pos + btn_back.contents.h
-	window.boxes.append(button)
-	
-	# Splat the forward nav buttons at the bottom
-	x_pos = config.SCREEN_W - (btn_fwd.contents.w +5)
-	y_pos = config.SCREEN_H - btn_fwd.contents.h
-	fwd_rect = SDL_Rect(x_pos, y_pos, btn_fwd.contents.w, btn_back.contents.h)
-	SDL_BlitSurface(btn_fwd, None, window.backbuffer, fwd_rect)
-	# Register nav buttons as available on the page for clicks
-	button = {}
-	button['name'] = "btn_fwd"
-	button['image'] =  config.ASSETS['btn_fwd']
-	button['x1'] = x_pos
-	button['x2'] = x_pos + btn_fwd.contents.w
-	button['y1'] = y_pos
-	button['y2'] = y_pos + btn_fwd.contents.h
-	window.boxes.append(button)
-	
-	# Splat the power mode buttons at the bottom
-	x_pos = int(config.SCREEN_W / 2) - int(btn_power.contents.w / 2)
-	y_pos = config.SCREEN_H - btn_power.contents.h
-	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
-	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
-	button = {}
-	button['name'] = "btn_power"
-	button['image'] =  btn_power_image
-	button['x1'] = x_pos
-	button['x2'] = x_pos + btn_power.contents.w
-	button['y1'] = y_pos
-	button['y2'] = y_pos + btn_power.contents.h
-	window.boxes.append(button)
-	
-	# Load font
-	font = gfxGetFont(window, config.FONT_BUTTON, config.FONT_BUTTON_PT)
-	font_colour = pixels.SDL_Color(config.FONT_BUTTON_COLOUR['r'], config.FONT_BUTTON_COLOUR['g'], config.FONT_BUTTON_COLOUR['b'])
-	
-	# Try to load the button configuration for this page
-	y_pos = 0
-	x_left = 5
-	x_right = config.SCREEN_W - ((2 * x_left) + config.BUTTON_WIDTH)
-	for alignment in ["L", "R"]:
-		
-		y_pos = 0
-		buttons = getButtons(page, alignment)
-		for button in buttons:
-			logger.debug("Button %s.%s.%s:%s" % (page, button['align'], button['number'], button['text']))
-	
-			# Left
-			if alignment == "L":
-				x_pos = x_left
-			
-			# Right
-			if alignment == "R":
-				x_pos = x_right
-				
-			# Is there a bitmap for this button?
-			if button['image'] and (os.path.exists(config.ASSETS_FOLDER + button['image'])):
-				new_btn_surface = gfxLoadBMP(window, config.ASSETS_FOLDER + button['image'])
-				blit_button = new_btn_surface
-				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
-				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)
-				
-				# Register this button as available on the page for clicks
-				button['name'] = "deviceClick"
-				button['x1'] = x_pos
-				button['x2'] = x_pos + blit_button.contents.w
-				button['y1'] = y_pos
-				button['y2'] = y_pos + blit_button.contents.h
-				window.boxes.append(button)
-			else:
-				# Display default button
-				blit_button = btn_surface
-				btn_rect = SDL_Rect(x_pos, y_pos, blit_button.contents.w, blit_button.contents.h)
-				SDL_BlitSurface(blit_button, None, window.backbuffer, btn_rect)
-				
-				# Register this button as available on the page for clicks
-				button['name'] = "deviceClick"
-				button['x1'] = x_pos
-				button['x2'] = x_pos + blit_button.contents.w
-				button['y1'] = y_pos
-				button['y2'] = y_pos + blit_button.contents.h
-				window.boxes.append(button)
-				
-				# Display text on button
-				text_surface = gfxGetTextSurface(window, font, config.FONT_BUTTON_PT, font_colour, config.FONT_BUTTON_COLOUR, button['text'])
-				btn_rect = SDL_Rect(x_pos + int((blit_button.contents.w - text_surface.contents.w) / 2), y_pos + int((blit_button.contents.h - text_surface.contents.h) / 2), text_surface.contents.w, text_surface.contents.h)
-				SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
-			
-			y_pos += config.BUTTON_HEIGHT + 5
-
-	# Are we flashing a clicked button?
-	if flash and (button_clicked is not None):
-		# Render standard screen
-		window.update()
-		
-		# Turn clicked button a different colour
-		select_rect = SDL_Rect(button_clicked['x1'], button_clicked['y1'], button_clicked['x2'] - button_clicked['x1'], button_clicked['y2'] - button_clicked['y1'])
-		SDL_FillRect(window.backbuffer, select_rect, window.highlight_colour)
-
-		# Re-render screen
-		window.update()
-		time.sleep(config.BUTTON_FLASH_DELAY)
-		
-		# Render standard button content again
-		SDL_FillRect(window.backbuffer, select_rect, window.background_colour)
-		
-		# 1. We have an image:
-		if button_clicked['image']:
-			old_btn_surface = gfxLoadBMP(window, config.ASSETS_FOLDER + button_clicked['image'])
-			SDL_BlitSurface(old_btn_surface, None, window.backbuffer, select_rect)
-		
-		else:
-			# 2. We don't have an image - render text again
-			SDL_BlitSurface(btn_surface, None, window.backbuffer, select_rect)
-			text_surface = gfxGetTextSurface(window, font, config.FONT_BUTTON_PT, font_colour, config.FONT_BUTTON_COLOUR, button_clicked['text'])
-			btn_rect = SDL_Rect(select_rect.x + int((select_rect.w - text_surface.contents.w) / 2), select_rect.y + int((select_rect.h - text_surface.contents.h) / 2), text_surface.contents.w, text_surface.contents.h)
-			SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
-		
-		# 3.
-		window.update()
-
-	g.cleanUp()
-	
-	return page

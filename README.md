@@ -27,8 +27,8 @@ All mapped to a single button on the touchscreen.
  
   - Python 3
   - PySDL2 - which requires the following libraries:
-    - libSDL2
-    - libSDL2-TTF
+    - libSDL2 - *please read the notes below on libSDL2 for Raspbian*
+    - libSDL2-TTF - *please read the notes below on libSDL2 for Raspbian*
   
 A `requirements.txt` file is provided with which you can automatically install all of the Python packages, simply run:
 
@@ -38,17 +38,36 @@ pip install -r requirements.txt
 
 ### libSDL without X11 for Raspbian
 
-Earlier versions of libSDL2 for Raspbian required the installation of the X11 server in order to produce graphics output. Clearly doing that is running extra stuff that we really don't want or need.
+Earlier versions of libSDL2 for Raspbian required the installation of the X11 server in order to produce graphics output. Clearly doing that is running extra stuff that we really don't want or need in an embedded device such as the Pi.
 
-From libSDL2 v2.0.5 output using OpenGL ES *without* X11 running should be supported. You can force SDL to use this mode by setting the following environment variable before running your application:
+From libSDL2 v2.0.5 output using OpenGL ES *without* X11 running should be supported. However, most vendor-supplied versions of libSDL still only build-in X11 output, as detailed here: https://discourse.libsdl.org/t/problems-using-sdl2-on-raspberry-pi-without-x11-running/22621/3
+
+To be certain you have a version of libSDL that supports OpenGLES output on the Pi *without* X11 you really need to build it from source *and* ensure that you don't have the Raspbian supplied SDL libraries installed.
+
+There is an easy way of doing this on Raspbian (https://github.com/simple2d/simple2d#on-linux), and that is:
 
 ```
-export SDL_RENDER_DRIVER=opengles2
+# Remove any vendor installed libsdl2 libraries
+apt-get remove libsdl2-dev libsdl2-ttf-dev libsdl2-2.0-0 libsdl2-ttf-2.0-0
+
+# Create temp folder to build sdl2
+mkdir /tmp/sdl2
+cd /tmp/sdl2
+
+# Download self-contained configure/install script
+wget https://raw.githubusercontent.com/simple2d/simple2d/master/bin/simple2d.sh
+chmod +x simple2d.sh
+
+# Run library installer which will build libs and drop them in /usr/local/lib
+./simple2d.sh install --sdl
+
+# Add newly installed lib dirs to library path
+echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf
+rm /etc/ld.so.cache
+ldconfig
 ```
 
-Make sure you have the latest version of Raspbian installed. If you want to have the absolute latest version of libSDL2 which has the non-X11 OpenGL ES support, the SDL project provides pre-built packages here: https://buildbot.libsdl.org/sdl-builds/sdl-raspberrypi/?C=M;O=D
-
-Test the application first, it's likely that you already have a version of libSDL2 with the non-X11 OpenGL ES support.
+After that, anything using SDL2 (either directly or via PySDL2) should work normally, outputting full-screen graphics using the hardware OpenGLES2 driver of the Pi and *not* require X11 running.
 
 ### Installing energenie library
 
