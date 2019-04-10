@@ -154,7 +154,8 @@ def sdlRFController():
 					redraw = True
 					break
 				
-				if (clicked == "btn_config"):
+				if (event.key.keysym.sym == SDLK_s) or (clicked == "btn_config"):
+					button = window.boxPressedByName(name = "btn_config")		
 					if screen == "status":
 						# Go back to main pages
 						renderStatus(window, button_clicked = button, flash = True, power_mode = power_mode)

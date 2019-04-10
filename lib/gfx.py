@@ -211,8 +211,7 @@ def gfxInit():
 		logger.info("Current window: %sx%s" % (x.value, y.value))
 		
 		if (x.value != config.SCREEN_W) or (y.value != config.SCREEN_H):
-			logger.error("Unable to create a window of the requested size")
-			return False
+			logger.warn("Unable to create a window of the requested size")
 		
 		# Create a renderer to draw into the window
 		renderer = SDL_CreateRenderer(window, -1, 0, SDL_RENDERER_ACCELERATED);
