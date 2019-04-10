@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import sys
 import time
 import timeit
@@ -30,7 +31,7 @@ from lib.buttons import getPages, getButtonPower, setButtonPower
 # SDL routines
 from sdl2 import *
 from lib.gfx import gfxInit, gfxClose, gfxSplashScreen
-from lib.render import renderPage, renderStatus
+from lib.render import renderPage, renderStatus, renderConfirmWindow
 
 # Set up a logger for this file
 logger = newlog(__file__)
@@ -73,12 +74,21 @@ def sdlRFController():
 	# Default switch mode
 	power_mode = "ON"
 	screen = "page"
+	old_screen = "page"
 	button = False
 	clicked = False
 	redraw = True
+	loop_count = 0
 	
 	# Event handler
 	while running:
+		
+		# Dump any cached surfaces or fonts
+		if loop_count > config.CACHE_CLEAR_TIME:
+			window.clearCache()	
+			loop_count = 0
+			
+		loop_count += 1
 		time.sleep(config.REFRESH_TIME)
 		while SDL_PollEvent(ctypes.byref(event)) != 0:
 			
@@ -123,6 +133,25 @@ def sdlRFController():
 					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
 					setButtonPower(button, state = power_mode)
 					redraw = False
+					break
+				
+				if (clicked == "btn_restart"):
+					old_screen = screen
+					renderConfirmWindow(window = window, header = "Application Restart", text = "This will restart the application.\nAre you sure?")
+					screen = "restart"
+					redraw = False
+					break
+				
+				if (screen == "restart") and (clicked == "btn_confirm"):
+					# Restart application
+					logger.info("Restarting application")
+					python = sys.executable
+					os.execl(python, python, *sys.argv)
+					
+				if (screen == "restart") and (clicked == "btn_cancel"):
+					# Cancel restart overlay
+					screen = old_screen
+					redraw = True
 					break
 				
 				if (clicked == "btn_config"):

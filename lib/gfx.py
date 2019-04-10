@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import gc
 import os
 import sys
 import ctypes
@@ -37,6 +38,7 @@ class gfxData():
 	""" Encapsulation of an SDL window/canvas and a hardware dependent renderer """
 	
 	def __init__(self, window, renderer):
+		gc.enable()
 		self.window = window
 		self.renderer = renderer
 		
@@ -70,7 +72,25 @@ class gfxData():
 		
 		self.background_colour = SDL_MapRGB(self.backbuffer.contents.format, config.BACKGROUND_COLOUR['r'], config.BACKGROUND_COLOUR['g'], config.BACKGROUND_COLOUR['b'])
 		self.highlight_colour = SDL_MapRGB(self.backbuffer.contents.format, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'])
+	
+	def clearCache(self):
+		""" Free any cached surfaces or fonts """
+		cachedSurfaces = list(self.cachedSurfaces.keys())
+		cachedFonts = list(self.cachedFonts.keys())
+			
+		for s in cachedSurfaces:
+			logger.debug("Freeing old surface [%s]" % s)
+			SDL_FreeSurface(self.cachedSurfaces[s])
+		self.cachedSurfaces = {}
 		
+		for f in cachedFonts:
+			logger.debug("Freeing old font [%s]" % f)
+			TTF_CloseFont(self.cachedFonts[f])
+		self.cachedFonts = {}
+		
+		logger.debug("Running Python garbage collection")
+		gc.collect()
+	
 	def mouseRead(self, event):
 		""" Called whenever an SDL Event of type touchscreen or mouse click is detected, reads and stores pointer position """
 		self.mouse_buttons = SDL_GetMouseState(self.mouse_x, self.mouse_y)
@@ -95,12 +115,15 @@ class gfxData():
 				return box
 		return False
 	
-	def update(self, transition = None):
+	def update(self, transition = None, reuse_texture = False):
 		""" Redraw the screen """		
 		
 		# Without any transitions, just copy backbuffers, then render to texture
-		self.render_texture = SDL_CreateTextureFromSurface(self.renderer, self.backbuffer)
-		SDL_RenderCopy(self.renderer, self.render_texture, None, None)
+		if reuse_texture:
+			SDL_RenderCopy(self.renderer, self.render_texture, None, None)
+		else:
+			self.render_texture = SDL_CreateTextureFromSurface(self.renderer, self.backbuffer)
+			SDL_RenderCopy(self.renderer, self.render_texture, None, None)
 		SDL_RenderPresent(self.renderer)
 		SDL_DestroyTexture(self.render_texture)		
 				
@@ -144,6 +167,7 @@ class GarbageCleaner():
 			SDL_DestroyTexture(t)
 		for s in self.surfaces:
 			SDL_FreeSurface(s)
+			pass
 		for f in self.fonts:
 			TTF_CloseFont(f)
 
@@ -163,7 +187,7 @@ def gfxInit():
 			logger.warn("Check the environment variable SDL_VIDEODRIVER for an incorrect/unavailable driver type")
 			return False
 		
-		# Create a fixed sized graphisc window
+		# Create a fixed sized graphics window
 		logger.info("Creating SDL window")
 		window = SDL_CreateWindow(str.encode(config.APPLICATION_NAME), 
 			SDL_WINDOWPOS_CENTERED,
@@ -174,8 +198,21 @@ def gfxInit():
 		)
 		
 		# Get the details of the window that was created
-		SDL_GetWindowDisplayMode(window, mode)
-		logger.info("Created window is: %sx%s @ %sHz" % (mode.w, mode.h, mode.refresh_rate))
+		#SDL_GetCurrentDisplayMode()
+		#SDL_GetWindowDisplayMode(window, mode)
+		num_displays = SDL_GetNumVideoDisplays()
+		for i in range(0, SDL_GetNumVideoDisplays()):
+			SDL_GetCurrentDisplayMode(i, mode)
+			logger.info("Current physical display #%s: %sx%s @ %sHz" % (i, mode.w, mode.h, mode.refresh_rate))
+		
+		x = ctypes.c_int(0)
+		y = ctypes.c_int(0)
+		SDL_GetWindowSize(window, x, y)
+		logger.info("Current window: %sx%s" % (x.value, y.value))
+		
+		if (x.value != config.SCREEN_W) or (y.value != config.SCREEN_H):
+			logger.error("Unable to create a window of the requested size")
+			return False
 		
 		# Create a renderer to draw into the window
 		renderer = SDL_CreateRenderer(window, -1, 0, SDL_RENDERER_ACCELERATED);

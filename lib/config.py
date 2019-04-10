@@ -3,14 +3,24 @@ APPLICATION_NAME = "sdlRFController"
 # Time between screen refresh/event checks
 REFRESH_TIME = 0.2
 
+# Amount of time (in terms of screen refreshes) until we drop all cached
+# surfaces and fonts and reload them again
+CACHE_CLEAR_TIME = 10
+
 # Enable more verbose output
-DEBUG = 1
+DEBUG = 0
 INFO = 1
 
 # Screen size
 SCREEN_W = 480
 SCREEN_H = 320
 SCREEN_BPP = 24
+
+# Popup window size and location
+SCREEN_POPUP_W = int(SCREEN_W * (2/3))
+SCREEN_POPUP_H = int(SCREEN_H * (2/3))
+SCREEN_POPUP_X = int((SCREEN_W - SCREEN_POPUP_W) / 2)
+SCREEN_POPUP_Y = int((SCREEN_H - SCREEN_POPUP_H) / 2)
 
 # Default screen fill
 BACKGROUND_COLOUR = {
@@ -20,9 +30,9 @@ BACKGROUND_COLOUR = {
 }
 # Highlight colour
 HIGHLIGHT_COLOUR = {
-        'r'     : 200,
-        'g'     : 200,
-        'b'     : 200,
+        'r'     : 180,
+        'g'     : 180,
+        'b'     : 180,
 }
 
 # Image folder
@@ -34,9 +44,12 @@ ASSETS = {
         'power_on'		: ASSETS_FOLDER + 'power_on2.bmp',
         'power_off'		: ASSETS_FOLDER + 'power_off.bmp',
         'btn_config'	: ASSETS_FOLDER + 'btn_config.bmp',
+        'btn_restart'	: ASSETS_FOLDER + 'btn_restart.bmp',
         'btn_default'	: ASSETS_FOLDER + 'btn_default.bmp',
-        'btn_fwd'	: ASSETS_FOLDER + 'btn_default_fwd2.bmp',
-        'btn_back'	: ASSETS_FOLDER + 'btn_default_back2.bmp',
+        'btn_fwd'		: ASSETS_FOLDER + 'btn_default_fwd2.bmp',
+        'btn_back'		: ASSETS_FOLDER + 'btn_default_back2.bmp',
+        'btn_confirm'	: ASSETS_FOLDER + 'btn_confirm.bmp',
+        'btn_cancel'	: ASSETS_FOLDER + 'btn_cancel.bmp',
 }
 
 # Font files
@@ -50,7 +63,11 @@ FONT_BUTTON_PT = 28
 
 FONT_INFO = ASSETS_FOLDER + "verdana.ttf"
 FONT_INFO_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
-FONT_INFO_PT = 16
+FONT_INFO_PT = 18
+
+FONT_INFO_HEADER = ASSETS_FOLDER + "verdanab.ttf"
+FONT_INFO_HEADER_COLOUR = { 'r' : 0, 'g': 0, 'b': 0}
+FONT_INFO_HEADER_PT = 18
 
 # Screen layout and configuration
 MAX_ROWS = 5

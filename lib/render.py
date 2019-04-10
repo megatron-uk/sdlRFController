@@ -31,6 +31,7 @@ from lib.buttons import getPages, getButtons
 from lib.gfx import GarbageCleaner, gfxLoadBMP, gfxGetText, gfxGetFont
 
 # SDL routines
+import sdl2
 from sdl2 import *
 
 # Set up a logger for this file
@@ -44,6 +45,7 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	
 	# Load generic button bitmaps
 	btn_surface = gfxLoadBMP(window, config.ASSETS['btn_default'])
+	btn_restart = gfxLoadBMP(window, config.ASSETS['btn_restart'])
 	btn_config = gfxLoadBMP(window, config.ASSETS['btn_config'])
 	btn_back = gfxLoadBMP(window, config.ASSETS['btn_back'])
 	btn_fwd =  gfxLoadBMP(window, config.ASSETS['btn_fwd'])
@@ -56,8 +58,10 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 		btn_power =  gfxLoadBMP(window, config.ASSETS['power_off'])
 		btn_power_image = config.ASSETS['power_off']
 	
+	x_spacing = 5
+	
 	# Splat the back nav buttons at the bottom
-	x_pos = 5
+	x_pos = x_spacing
 	y_pos = config.SCREEN_H - btn_back.contents.h
 	back_rect = SDL_Rect(x_pos, y_pos, btn_back.contents.w, btn_back.contents.h)
 	SDL_BlitSurface(btn_back, None, window.backbuffer, back_rect)
@@ -71,23 +75,8 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['y2'] = y_pos + btn_back.contents.h
 	window.boxes.append(button)
 	
-	# Splat the forward nav buttons at the bottom
-	x_pos = config.SCREEN_W - (btn_fwd.contents.w +5)
-	y_pos = config.SCREEN_H - btn_fwd.contents.h
-	fwd_rect = SDL_Rect(x_pos, y_pos, btn_fwd.contents.w, btn_back.contents.h)
-	SDL_BlitSurface(btn_fwd, None, window.backbuffer, fwd_rect)
-	# Register nav buttons as available on the page for clicks
-	button = {}
-	button['name'] = "btn_fwd"
-	button['image'] =  config.ASSETS['btn_fwd']
-	button['x1'] = x_pos
-	button['x2'] = x_pos + btn_fwd.contents.w
-	button['y1'] = y_pos
-	button['y2'] = y_pos + btn_fwd.contents.h
-	window.boxes.append(button)
-	
 	# Splat the power mode buttons at the bottom
-	x_pos = int(config.SCREEN_W / 2) - int(btn_power.contents.w / 2)
+	x_pos = x_pos + btn_back.contents.w + x_spacing # previous button, plus an offset
 	y_pos = config.SCREEN_H - btn_power.contents.h
 	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
 	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
@@ -101,7 +90,7 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	window.boxes.append(button)
 	
 	# Splat the config/status buttons at the bottom
-	x_pos = x_pos + btn_power.contents.w + 5 # previous button, plus an offset
+	x_pos = x_pos + btn_power.contents.w + x_spacing # previous button, plus an offset
 	y_pos = config.SCREEN_H - btn_config.contents.h
 	config_rect = SDL_Rect(x_pos, y_pos, btn_config.contents.w, btn_config.contents.h)
 	SDL_BlitSurface(btn_config, None, window.backbuffer, config_rect)
@@ -114,9 +103,142 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['y2'] = y_pos + btn_config.contents.h
 	window.boxes.append(button)
 	
+	# Splat the restart buttons at the bottom
+	x_pos = x_pos + btn_restart.contents.w + x_spacing # previous button, plus an offset
+	y_pos = config.SCREEN_H - btn_restart.contents.h
+	restart_rect = SDL_Rect(x_pos, y_pos, btn_restart.contents.w, btn_restart.contents.h)
+	SDL_BlitSurface(btn_restart, None, window.backbuffer, restart_rect)
+	button = {}
+	button['name'] = "btn_restart"
+	button['image'] =  config.ASSETS['btn_restart']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_restart.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_restart.contents.h
+	window.boxes.append(button)
+	
+	# Splat the forward nav buttons at the bottom
+	x_pos = x_pos + btn_fwd.contents.w + x_spacing # previous button, plus an offset
+	y_pos = config.SCREEN_H - btn_fwd.contents.h
+	fwd_rect = SDL_Rect(x_pos, y_pos, btn_fwd.contents.w, btn_back.contents.h)
+	SDL_BlitSurface(btn_fwd, None, window.backbuffer, fwd_rect)
+	# Register nav buttons as available on the page for clicks
+	button = {}
+	button['name'] = "btn_fwd"
+	button['image'] =  config.ASSETS['btn_fwd']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_fwd.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_fwd.contents.h
+	window.boxes.append(button)
+	
 	g.cleanUp()
 	
 	return True
+
+def renderConfirmWindow(window = None, header = None, text = None):
+	""" Show a semi-transparent overlay window with a Yes/No confirmation option """
+	
+	logger.debug("Loading confirmation window")
+	
+	logger.debug("%sx%s at x:%s y:%s" % (config.SCREEN_POPUP_W, config.SCREEN_POPUP_H, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y))
+	
+	font_header = gfxGetFont(window, config.FONT_INFO_HEADER, config.FONT_INFO_HEADER_PT)
+	font = gfxGetFont(window, config.FONT_INFO, config.FONT_INFO_PT)
+	font_colour = pixels.SDL_Color(config.FONT_INFO_COLOUR['r'], config.FONT_INFO_COLOUR['g'], config.FONT_INFO_COLOUR['b'])
+	font_reverse_colour = pixels.SDL_Color(config.FONT_INFO_HEADER_COLOUR['r'], config.FONT_INFO_HEADER_COLOUR['g'], config.FONT_INFO_HEADER_COLOUR['b'])
+	
+	g = GarbageCleaner()
+	
+	# Remove any existing buttons so that they cannot be clicked
+	window.boxes = []
+	
+	# We don't call a window.clear() as we want to preserve what is shown below
+	
+	if (SDL_BYTEORDER == SDL_BIG_ENDIAN):
+		rmask = 0xff000000
+		gmask = 0x00ff0000
+		bmask = 0x0000ff00
+		amask = 0x000000ff
+	else:
+		rmask = 0x000000ff
+		gmask = 0x0000ff00
+		bmask = 0x00ff0000
+		amask = 0xff000000
+	
+	# Create a surface with the alpha channel set
+	overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, 32 , rmask , gmask , bmask , amask )
+	g.regS(overlay_surface)
+	overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
+	SDL_FillRect(overlay_surface, None , 0xBB0F0F0F) # ARGB format
+	SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
+
+	# Print the header in reverse text in the overlay box
+	if header is not None:
+		logger.info(header)
+		header_text_surface = TTF_RenderText_Blended(font_header, str.encode(header), font_reverse_colour)
+		g.regS(header_text_surface)
+		header_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_W, header_text_surface.contents.h + 2)
+		SDL_FillRect(window.backbuffer, header_rect, window.highlight_colour)
+		header_text_rect = SDL_Rect(config.SCREEN_POPUP_X + int((config.SCREEN_POPUP_W - header_text_surface.contents.w) / 2), config.SCREEN_POPUP_Y + 2, header_text_surface.contents.w, header_text_surface.contents.h)
+		SDL_BlitSurface(header_text_surface, None, window.backbuffer, header_text_rect)
+		y_offset = header_text_surface.contents.h
+	else:
+		y_offset = 0
+
+	# Print the text in the overlay box
+	if text is not None:
+		logger.info(text)
+		text_surface = TTF_RenderText_Blended_Wrapped(font, str.encode(text), font_colour, config.SCREEN_POPUP_W - 4)
+		g.regS(text_surface)
+		overlay_rect = SDL_Rect(config.SCREEN_POPUP_X + 2, config.SCREEN_POPUP_Y + y_offset + 2, text_surface.contents.w, text_surface.contents.h)
+		SDL_BlitSurface(text_surface, None, window.backbuffer, overlay_rect)
+	
+	# Add Yes/No buttons
+	btn_confirm = gfxLoadBMP(window, config.ASSETS['btn_confirm'])
+	btn_cancel = gfxLoadBMP(window, config.ASSETS['btn_cancel'])
+	
+	# Splat the confirm nav buttons at the bottom of the overlay
+	x_pos = config.SCREEN_POPUP_X + 5
+	y_pos = (config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H) - btn_confirm.contents.h - 5
+	confirm_rect = SDL_Rect(x_pos, y_pos, btn_confirm.contents.w, btn_confirm.contents.h)
+	SDL_BlitSurface(btn_confirm, None, window.backbuffer, confirm_rect)
+	# Register nav buttons as available on the page for clicks
+	button = {}
+	button['name'] = "btn_confirm"
+	button['image'] =  config.ASSETS['btn_confirm']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_confirm.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_confirm.contents.h
+	window.boxes.append(button)
+	
+	# Splat the cancel nav buttons at the bottom of the overlay
+	x_pos = ((x_pos + config.SCREEN_POPUP_W) - btn_cancel.contents.w) - 10
+	y_pos = (config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H) - btn_cancel.contents.h - 5
+	cancel_rect = SDL_Rect(x_pos, y_pos, btn_cancel.contents.w, btn_cancel.contents.h)
+	SDL_BlitSurface(btn_cancel, None, window.backbuffer, cancel_rect)
+	# Register nav buttons as available on the page for clicks
+	button = {}
+	button['name'] = "btn_cancel"
+	button['image'] =  config.ASSETS['btn_cancel']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_cancel.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_cancel.contents.h
+	window.boxes.append(button)
+	
+	window.update()
+	
+	# Redraw on the existing renderer
+	SDL_SetRenderDrawColor(window.renderer, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'], SDL_ALPHA_OPAQUE)
+	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y);
+	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+	window.update(reuse_texture = True)
+	
+	g.cleanUp()
 
 def renderStatus(window = None, button_clicked = None, flash = False, power_mode = "ON"):
 	""" Display system info / status """
@@ -133,9 +255,70 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	font = gfxGetFont(window, config.FONT_INFO, config.FONT_INFO_PT)
 	font_colour = pixels.SDL_Color(config.FONT_INFO_COLOUR['r'], config.FONT_INFO_COLOUR['g'], config.FONT_INFO_COLOUR['b'])
 	
-	# Text start positions
-	x_pos = 0
-	y_pos = 0
+	################################################
+	
+	# Text start positions for column 0
+	x_pos = 5
+	y_pos = 5
+	
+	# Python version (a constant)
+	text_python = "Python: %s.%s.%s" % (sys.version_info[0], sys.version_info[1], sys.version_info[2]) 
+	text_surface = gfxGetText(window, font, config.FONT_INFO_PT, font_colour, config.FONT_INFO_COLOUR, text_python)
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# PySDL2 version (a constant)
+	text_pysdl_version = "PySDL2 Library: %s" % sdl2.__version__
+	text_surface = gfxGetText(window, font, config.FONT_INFO_PT, font_colour, config.FONT_INFO_COLOUR, text_pysdl_version)
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# SDL version (a constant)
+	text_sdl_version = "SDL Library: %s.%s.%s" % (sdl2.version.SDL_MAJOR_VERSION, sdl2.version.SDL_MINOR_VERSION, sdl2.version.SDL_PATCHLEVEL)
+	text_surface = gfxGetText(window, font, config.FONT_INFO_PT, font_colour, config.FONT_INFO_COLOUR, text_sdl_version)
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# SDL Driver type (a constant)
+	text_sdl_driver = "SDL Driver: %s" % bytes.decode(SDL_GetCurrentVideoDriver())
+	text_surface = gfxGetText(window, font, config.FONT_INFO_PT, font_colour, config.FONT_INFO_COLOUR, text_sdl_driver)
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# SDL render display size
+	x = ctypes.c_int(0)
+	y = ctypes.c_int(0)
+	SDL_GetWindowSize(window.window, x, y)
+	text_window_bytes = "SDL Display: %sx%s" % (x.value, y.value)
+	text_surface = gfxGetText(window, font, config.FONT_INFO_PT, font_colour, config.FONT_INFO_COLOUR, text_window_bytes)
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# Surfaces cached in memory
+	text_cached_surfaces = "Surfaces: %s" % len(window.cachedSurfaces.keys())
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_cached_surfaces), font_colour)
+	g.regS(text_surface)
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	# Fonts open
+	text_cached_fonts = "Open Fonts: %s" % len(window.cachedFonts.keys())
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_cached_fonts), font_colour)
+	g.regS(text_surface)
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
+	################################################
+	
+	# Text start positions for column 1
+	x_pos = int(config.SCREEN_W / 2) + 5
+	y_pos = 5
 	
 	# IP Address
 	na = psutil.net_if_addrs()
@@ -146,8 +329,17 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
+	# CPU frequency
+	cpu_speed = int(int(open("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq").read().split('\n')[0]) / 1000)
+	text_cpu_speed = "CPU Speed: %s MHz" % cpu_speed
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_cpu_speed), font_colour)
+	g.regS(text_surface)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
 	# CPU load
-	text_cpu = "CPU: %s" % psutil.cpu_percent(interval = config.REFRESH_TIME) 
+	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (config.REFRESH_TIME * 4))) 
 	y_pos = y_pos + text_surface.contents.h + 5
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	text_surface = TTF_RenderText_Blended(font, str.encode(text_cpu), font_colour)
@@ -155,7 +347,7 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
 	# Uptime
-	ts = int(time.mktime(datetime.datetime.now().timetuple())) - psutil.boot_time()
+	ts = int(int(time.mktime(datetime.datetime.now().timetuple())) - psutil.boot_time())
 	text_time = "Uptime: %s sec" % ts
 	y_pos = y_pos + text_surface.contents.h + 5
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
@@ -165,19 +357,23 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	
 	# Current RAM use
 	process = psutil.Process(os.getpid())
-	text_memory_size = "Process: %s bytes" % process.memory_info().rss
+	text_memory_size = "Process: %s kbytes" % int(process.memory_info().rss / 1024)
 	y_pos = y_pos + text_surface.contents.h + 5
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	text_surface = TTF_RenderText_Blended(font, str.encode(text_memory_size), font_colour)
 	g.regS(text_surface)
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
+	# Number of open files
+	text_files = "Files: %s" % len(psutil.Process(os.getpid()).open_files())
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_files), font_colour)
+	g.regS(text_surface)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
 	# Total clicks
-	# Kernel ver
-	# Python ver
-	# SDL ver & driver
-	
-	
+	# Kernel ver	
 	
 	g.cleanUp()
 	window.update()
