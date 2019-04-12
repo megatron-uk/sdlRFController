@@ -346,6 +346,15 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	g.regS(text_surface)
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
+	# CPU temp
+	temp = int(int(open("/sys/class/thermal/thermal_zone0/temp").read()) / 1000)
+	text_temp = "CPU Temp: %s C" % temp
+	y_pos = y_pos + text_surface.contents.h + 5
+	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
+	text_surface = TTF_RenderText_Blended(font, str.encode(text_temp), font_colour)
+	g.regS(text_surface)
+	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
+	
 	# Uptime
 	ts = int(int(time.mktime(datetime.datetime.now().timetuple())) - psutil.boot_time())
 	text_time = "Uptime: %s sec" % ts
