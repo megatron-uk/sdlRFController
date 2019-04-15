@@ -42,10 +42,15 @@ The touchscreen I'm using is a Waveshare/Goodtft 3.5", 480x320 model, interfaced
 
 Normally you run through the vendors *install* routine (which ends up being copying the kernel overlay modules to `/boot` and dropping configuration statements in to `/boot/config.txt`). Here's the simplified version:
 
- - Install waveshare/goodtft driver/config
- - Add rotation options to /boot/config.txt
-
-I had to add the following to `/boot/config.txt`:
+ - Install waveshare/goodtft driver/config - all you need are the files shown below from your vendors *install*. Ignore everything else they try to get you to install: 
+ 
+```
+$ ls -l /boot/overlays/tft35*
+-rwxr-xr-x 1 root root  2616 Apr 13 12:45 tft35a.dtbo
+-rwxr-xr-x 1 root root  2616 Apr 13 12:45 tft35a-overlay.dtb
+```
+ 
+ - Add rotation options to /boot/config.txt depending on the orientation of your screen. I had to add the following to `/boot/config.txt`:
 
 ```
 framebuffer_width=480
@@ -62,24 +67,49 @@ dtoverlay=tft35a,speed=24000000,fps=30
 display_rotate=2
 ```
 
- - Install rpi-fbcp
- - Add /usr/bin/fbcp to /etc/rc.local
- - Add udev rules for touch interface so that it is seen as a proper touchscreen device (optional, some versions of Linux already do this when the driver is loaded):
+ - Install rpi-fbcp, which copies the output sent to the HDMI port back to the touchscreen framebuffer:
  
- /etc/udev/rules.d/95-ads7846.rules
+```
+git clone https://github.com/tasanakorn/rpi-fbcp
+cd rpi-fbcp
+mkdir build
+cd build && cmake ..
+make && cp fbcp /usr/bin/fbcp
+```
+ 
+ - Add /usr/bin/fbcp to /etc/rc.local, before the *exit 0* line:
+ 
+```
+#!/bin/sh -e
+#
+# rc.local
+#
+
+/usr/bin/fbcp &
+
+exit 0
+
+```
+ 
+ - Add udev rules for touch interface so that it is seen as a proper touchscreen device (optional, some versions of Linux already do this when the driver is loaded), `/etc/udev/rules.d/95-ads7846.rules` should contain:
+ 
 ```
  SUBSYSTEM=="input", KERNEL=="event[0-9]*", ATTRS{name}=="ADS7846 Touchscreen", SYMLINK+="input/touchscreen"
 ```
 
-Install libts:
-`apt-get install libts-bin libts-dev libevdev-dev`
+ - Install libts:
+```
+apt-get install libts-bin libts-dev libevdev-dev
+```
 
-Calibrate touchscreen:
+ - Calibrate touchscreen:
 
-`TSLIB_FBDEVICE=/dev/fb1 TSLIB_TSDEVICE=/dev/input/touchscreen ts_calibrate`
+```
+TSLIB_FBDEVICE=/dev/fb1 TSLIB_TSDEVICE=/dev/input/touchscreen ts_calibrate
+```
  
-Presuming SDL was built with evdev support, it should work as a normal touch input event in SDL.
-
+You can now move on to installing libSDL.
+ 
 ### libSDL without X11 for Raspbian
 
 Earlier versions of libSDL2 for Raspbian required the installation of the X11 server in order to produce graphics output. Clearly doing that is running extra stuff that we really don't want or need in an embedded device such as the Pi.
@@ -216,7 +246,7 @@ An example button/device for my Roland MT-32 MIDI synthesiser could be:
 
 A little bit of explanation is needed for the above.
 
- - `btn_mt32.bmp` this image is a 200x600 bitmap stored in the `assets` directory.
+ - `btn_mt32.bmp` this image is a 200x60 bitmap stored in the `assets` directory.
  
  - If the *image* field was set to *None*, instead of the bitmap, it would print the *text* field on the button instead - useful when you don't have/need a graphical button, but a simple label will do instead.
  
@@ -383,3 +413,118 @@ SCREENS = {
 ```
 
 You are free to layout buttons on pages as you see fit. In my own use case I'm putting all the video games together on one page, display equipment on another, sound and music on another, etc.
+
+---
+
+## Raspberry Pi Speed/Power Tuning
+
+Some tips to both lower the normal power use of the Pi, as well as speed up boot times:
+
+ - Enable initial turbo to speed up boot
+ - Lower minimum clock speed to reduce power while running
+ - Use the `ondemand` cpu governor
+
+```
+# HDMI & display config
+framebuffer_width=480
+framebuffer_height=320
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=480 320 60 1 0 0 0
+hdmi_force_hotplug=1
+
+# CPU / GPU config
+initial_turbo=15
+arm_freq_min=300
+arm_freq=900
+core_freq=250
+scaling_min_freq=300
+scaling_max_freq=900
+gpu_mem=128
+
+# I2C/SPI
+dtparam=i2c_arm=on
+dtparam=spi=on
+enable_uart=1
+dtparam=audio=on
+
+# TFT module config
+dtoverlay=tft35a,speed=24000000,fps=30
+display_rotate=2
+```
+
+ - Disable power to the USB ports (as long as you don't have a keyboard plugged in!):
+ 
+```
+echo 0x0 > /sys/devices/platform/soc/3f980000.usb/buspower
+```
+
+ - Disable unecessary system services
+ 
+```
+systemctl disable apt-daily.service keyboard-setup.service
+systemctl disable hciuart
+systemctl mask hciuart
+systemctl disable dev-serial1
+systemctl disable dev-serial1.device
+systemctl stop sys-kernel-debug
+systemctl disable sys-kernel-debug.mount
+systemctl mask sys-kernel-debug.mount
+systemctl disable raspi-config
+systemctl mask triggerhappy
+systemctl disable wifi-country
+systemctl disable alsa-restore
+systemctl disable avahi-daemon
+systemctl disable triggerhappy
+systemctl disable graphical.target
+systemctl mask graphical.target
+```
+
+That should cut out most services that are not needed for an embedded device. As long as you are either using a relatively standard USB keyboard and HDMI output, or SSH over the wired ethernet connection it should all still work fine.
+
+My setup, with a Pi 2b reports the following boot times:
+
+```
+# systemd-analyze 
+Startup finished in 2.616s (kernel) + 5.733s (userspace) = 8.350s
+
+# systemd-analyze blame
+          2.268s dev-mmcblk0p2.device
+           671ms systemd-modules-load.service
+           526ms fake-hwclock.service
+           515ms networking.service
+           455ms loadcpufreq.service
+           408ms systemd-fsck@dev-disk-by\x2dpartuuid-80c6bd14\x2d01.service
+           404ms systemd-udev-trigger.service
+           392ms ssh.service
+           347ms systemd-udevd.service
+           331ms systemd-timesyncd.service
+           302ms run-rpc_pipefs.mount
+           257ms systemd-journald.service
+           238ms kmod-static-nodes.service
+           210ms systemd-random-seed.service
+           188ms systemd-fsck-root.service
+           185ms dhcpcd.service
+           184ms systemd-logind.service
+           181ms rsyslog.service
+           165ms systemd-tmpfiles-setup-dev.service
+           161ms user@1000.service
+           147ms cpufrequtils.service
+           134ms dev-mqueue.mount
+           127ms systemd-sysctl.service
+           125ms systemd-remount-fs.service
+           119ms systemd-tmpfiles-setup.service
+           108ms nfs-config.service
+           101ms console-setup.service
+            78ms systemd-update-utmp.service
+            61ms systemd-journal-flush.service
+            60ms var-tmp.mount
+            54ms var-log.mount
+            52ms systemd-update-utmp-runlevel.service
+            43ms rc-local.service
+            34ms sys-kernel-config.mount
+            31ms boot.mount
+            29ms systemd-user-sessions.service
+```
+
+From power on to ssh login in 8 seconds really isn't bad at all for a low powered device like the Pi.
