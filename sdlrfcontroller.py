@@ -26,7 +26,7 @@ import ctypes
 from lib import config
 from lib.newlog import newlog
 from lib.buttons import getPages, getButtonPower, setButtonPower
-
+from lib.pitft_touchscreen import pitft_touchscreen
 
 # SDL routines
 from sdl2 import *
@@ -52,7 +52,16 @@ def sdlRFController():
 	if window is False:
 		logger.error("Unable to continue - Exit")
 		return 1
-	
+
+	# Try to init touchscreen
+	try:
+		ts = pitft_touchscreen()
+		logger.info("Touchscreen input enabled")
+	except Exception as e:
+		logger.warn("Touchscreen input not available")
+		logger.debug(e)
+		ts = False
+
 	# Clear the canvas and show it
 	window.clear()
 	window.update()
@@ -69,7 +78,7 @@ def sdlRFController():
 	window.update(transition = transition)
 	
 	# SDL event handler
-	event = SDL_Event()
+	sdl_event = SDL_Event()
 	
 	# Default switch mode
 	power_mode = "ON"
@@ -80,6 +89,9 @@ def sdlRFController():
 	redraw = True
 	loop_count = 0
 	
+	# Start collecting touchscreen input
+	if ts:
+		ts.start()
 	# Event handler
 	while running:
 		
@@ -88,43 +100,84 @@ def sdlRFController():
 			window.clearCache()	
 			loop_count = 0
 			
-		loop_count += 1
 		time.sleep(config.REFRESH_TIME)
-		while SDL_PollEvent(ctypes.byref(event)) != 0:
+		
+		# Reset events
+		sdl_event = False
+		ts_event = False
+		
+		if ts:
+			# Read ann touchscreen events
+			while not ts.queue_empty():
+				for e in ts.get_event():
+					ts_event = e
+					logger.info("Touch event [%s]" % ts_event)
+					# Map x and y coordinates
+					if 'y' in ts_event.keys():
+						if config.TOUCH['axis_reversed']:
+							window.touch_y_raw = ts_event['x']
+						else:
+							window.touch_y_raw = ts_event['y']
+					if 'x' in ts_event.keys():
+						if config.TOUCH['axis_reversed']:
+							window.touch_x_raw = ts_event['y']
+						else:
+							window.touch_x_raw = ts_event['x']
+		else:
+			# Read an SDL event, if there is one
+			SDL_PollEvent(ctypes.byref(sdl_event))
 			
-			if event.type == SDL_QUIT:
+		if ((sdl_event != 0)  and (sdl_event.type != 0)) or (ts_event != False) :
+			if ts_event:
+				logger.debug("Process Touch event [%s]" % ts_event)
+			if sdl_event:
+				logger.debug("Process SDL event [%s type %s]" % (sdl_event, sdl_event.type))
+			loop_count += 1	
+			if (sdl_event and (sdl_event.type)) == SDL_QUIT:
 				# Handle the quit signal tasks (control-c, close of terminal, window etc)
 				logger.info("Quit signal detected")
 				running = False
-				break				
+				#break				
 				
-			elif (event.type == SDL_KEYDOWN) or (event.type == SDL_MOUSEBUTTONDOWN) or (event.type == SDL_FINGERDOWN):
+			if (sdl_event and (sdl_event.type in [SDL_KEYDOWN, SDL_MOUSEBUTTONDOWN, SDL_FINGERDOWN, SDL_FINGERMOTION])) or (ts_event):
 				################################################
 				#
 				# Handle keyboard or mouse input
 				#
 				################################################
 				
-				if event.type == SDL_KEYDOWN:
-					logger.debug("Keyboard input")
+				if (sdl_event and (sdl_event.type == SDL_KEYDOWN)):
+					logger.debug("SDL Keyboard input")
 					button = False
 					clicked = False
-				if (event.type == SDL_MOUSEBUTTONDOWN):
-					window.mouseRead(event)
+				if (sdl_event and (sdl_event.type == SDL_MOUSEBUTTONDOWN)):
+					window.mouseRead(sdl_event)
 					button = window.boxPressed()
 					if button:
 						clicked = button['name']
 					else:
 						clicked = False
-					logger.debug("Mouse input [box:%s]" % clicked)
-				if (event.type == SDL_FINGERDOWN):
-					window.mouseRead(event)
+					logger.debug("SDL Mouse input [box:%s]" % clicked)
+				if (sdl_event and (sdl_event.type == SDL_FINGERDOWN)):
+					window.mouseRead(sdl_event)
+					button = window.boxPressed()
 					if button:
 						clicked = button['name']
 					else:
 						clicked = False
-					logger.debug("Touch input [box:%s]" % clicked)
+					logger.debug("SDL Touch input [box:%s]" % clicked)
 					
+				if (ts_event):
+					window.touchRead(ts_event)
+					button = window.boxPressed()
+					if button:
+						clicked = button['name']
+					else:
+						clicked = False
+					logger.debug("Touchscreen input [box:%s]" % clicked)
+				
+				#break
+				
 				if clicked == "deviceClick":
 					# Flash the button to indicate click
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
@@ -133,14 +186,14 @@ def sdlRFController():
 					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
 					setButtonPower(button, state = power_mode)
 					redraw = False
-					break
+					#break
 				
 				if (clicked == "btn_restart"):
 					old_screen = screen
 					renderConfirmWindow(window = window, header = "Application Restart", text = "This will restart the application.\nAre you sure?")
 					screen = "restart"
 					redraw = False
-					break
+					#break
 				
 				if (screen == "restart") and (clicked == "btn_confirm"):
 					# Restart application
@@ -152,16 +205,17 @@ def sdlRFController():
 					# Cancel restart overlay
 					screen = old_screen
 					redraw = True
-					break
+					#break
 				
-				if (clicked == "btn_config"):
+				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_s)) or (clicked == "btn_config"):
+					button = window.boxPressedByName(name = "btn_config")		
 					if screen == "status":
 						# Go back to main pages
 						renderStatus(window, button_clicked = button, flash = True, power_mode = power_mode)
 						renderPage(window, page = page, button_clicked = button, flash = False, power_mode = power_mode)
 						screen = "page"
 						redraw = False
-						break
+						#break
 					else:
 						# Draw status screen
 						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
@@ -181,14 +235,15 @@ def sdlRFController():
 						
 					# Redraw screen
 					redraw = True
-					break
+					#break
 				
-				if (event.key.keysym.sym == SDLK_q):
-					# Exit from the running application
-					running = False
-					break
+				if sdl_event:
+					if (sdl_event.key.keysym.sym == SDLK_q):
+						# Exit from the running application
+						running = False
+						#break
 				
-				if (screen == "page") and ((event.key.keysym.sym == SDLK_RIGHT) or (clicked == "btn_fwd")):
+				if (screen == "page") and ((sdl_event and (event.key.keysym.sym == SDLK_RIGHT)) or (clicked == "btn_fwd")):
 					# Forward a page
 					button = window.boxPressedByName(name = "btn_fwd")
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
@@ -197,9 +252,9 @@ def sdlRFController():
 					else:
 						page = 1
 					redraw = True
-					break
+					#break
 						
-				if (screen == "page") and ((event.key.keysym.sym == SDLK_LEFT) or (clicked == "btn_back")):
+				if (screen == "page") and ((sdl_event and (event.key.keysym.sym == SDLK_LEFT)) or (clicked == "btn_back")):
 					# Back a page
 					button = window.boxPressedByName(name = "btn_back")
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
@@ -208,7 +263,7 @@ def sdlRFController():
 					else:
 						page = getPages()[-1]
 					redraw = True
-					break
+					#break
 						
 			else:
 				# Unsupported event type - just redraw the current screen
@@ -225,6 +280,10 @@ def sdlRFController():
 		
 	# Clean up the SDL libary
 	gfxClose()
+
+        # Stop touchscreen
+	if ts:
+		ts.stop()
 	return 0
 	
 if __name__ == '__main__':

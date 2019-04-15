@@ -124,6 +124,12 @@ rm /etc/ld.so.cache
 ldconfig
 ```
 
+Finally, you must also ensure that the Pi is **not** using the accelerated X11 OpenGL kernel module (as it cannot be used at the same time as the full-screen accelerated framebuffer driver), check `/boot/config.txt` to make sure that any reference to `vc4-kms-v3d` is commented out:
+
+```
+#dtoverlay=vc4-kms-v3d
+```
+
 After that, anything using SDL2 (either directly or via PySDL2) should work normally, outputting full-screen graphics using the hardware OpenGLES2 driver of the Pi and *not* require X11 running.
 
 ### Installing energenie library

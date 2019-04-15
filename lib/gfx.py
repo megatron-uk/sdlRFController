@@ -70,6 +70,35 @@ class gfxData():
 		self.mouse_y = ctypes.c_int(0)
 		self.mouse_buttons = False
 		
+		# Touchscreen raw values
+		self.touch_y_raw = 0
+		self.touch_x_raw = 0
+		
+		if config.TOUCH['axis_reversed']:
+			if config.TOUCH['y_min'] > config.TOUCH['y_max']:
+				self.touch_pts_per_xpixel = (config.SCREEN_W / abs(config.TOUCH['y_max'] - config.TOUCH['y_min']))
+			else:
+				self.touch_pts_per_xpixel = (config.SCREEN_W / abs(config.TOUCH['y_min'] - config.TOUCH['y_max']))
+				
+			if config.TOUCH['x_min'] > config.TOUCH['x_max']:
+				self.touch_pts_per_ypixel = (config.SCREEN_H / abs(config.TOUCH['x_max'] - config.TOUCH['x_min']))
+			else:
+				self.touch_pts_per_ypixel = (config.SCREEN_H / abs(config.TOUCH['x_min'] - config.TOUCH['x_max']))
+		
+		else:
+			if config.TOUCH['y_min'] > config.TOUCH['y_max']:
+				self.touch_pts_per_ypixel = (config.SCREEN_W / abs(config.TOUCH['y_max'] - config.TOUCH['y_min']))
+			else:
+				self.touch_pts_per_ypixel = (config.SCREEN_W / abs(config.TOUCH['y_min'] - config.TOUCH['y_max']))
+				
+			if config.TOUCH['x_min'] > config.TOUCH['x_max']:
+				self.touch_pts_per_xpixel = (config.SCREEN_H / abs(config.TOUCH['x_max'] - config.TOUCH['x_min']))
+			else:
+				self.touch_pts_per_xpixel = (config.SCREEN_H / abs(config.TOUCH['x_min'] - config.TOUCH['x_max']))
+		
+		logger.info("Touchscreen, x pts/pixel: %s" % self.touch_pts_per_xpixel)
+		logger.info("Touchscreen, y pts/pixel: %s" % self.touch_pts_per_ypixel)
+		
 		self.background_colour = SDL_MapRGB(self.backbuffer.contents.format, config.BACKGROUND_COLOUR['r'], config.BACKGROUND_COLOUR['g'], config.BACKGROUND_COLOUR['b'])
 		self.highlight_colour = SDL_MapRGB(self.backbuffer.contents.format, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'])
 	
@@ -79,17 +108,47 @@ class gfxData():
 		cachedFonts = list(self.cachedFonts.keys())
 			
 		for s in cachedSurfaces:
-			logger.debug("Freeing old surface [%s]" % s)
+			#logger.debug("Freeing old surface [%s]" % s)
 			SDL_FreeSurface(self.cachedSurfaces[s])
 		self.cachedSurfaces = {}
 		
 		for f in cachedFonts:
-			logger.debug("Freeing old font [%s]" % f)
+			#logger.debug("Freeing old font [%s]" % f)
 			TTF_CloseFont(self.cachedFonts[f])
 		self.cachedFonts = {}
 		
-		logger.debug("Running Python garbage collection")
+		#logger.debug("Running Python garbage collection")
 		gc.collect()
+	
+	def touchRead(self, ts_event):
+		""" Called when a Linux /dev/input/touchscreen event is detected - read the raw x/y values and map to the screen resolution coordinates """
+		
+		
+		logger.debug("Raw Coordinates x:%s y:%s" % (self.touch_x_raw, self.touch_y_raw))
+		
+		if config.TOUCH['y_min'] > config.TOUCH['y_max']:
+			self.mouse_y.value = int((config.TOUCH['y_min'] - self.touch_y_raw) *  (self.touch_pts_per_ypixel))
+		else:
+			self.mouse_y.value = int((self.touch_y_raw - config.TOUCH['y_min']) *  (self.touch_pts_per_ypixel))
+		if config.TOUCH['x_min'] > config.TOUCH['x_max']:
+			self.mouse_x.value = int((config.TOUCH['x_min'] - self.touch_x_raw) *  (self.touch_pts_per_xpixel))
+		else:
+			self.mouse_x.value = int((self.touch_x_raw - config.TOUCH['x_min']) *  (self.touch_pts_per_xpixel))
+		
+		# Error correction - constrain to screen res
+		if self.mouse_x.value < 0:
+			self.mouse_x.value = 0
+		
+		if self.mouse_x.value > config.SCREEN_W:
+			self.mouse_x.value = config.SCREEN_W
+		
+		if self.mouse_y.value < 0:
+			self.mouse_y.value = 0
+		
+		if self.mouse_y.value > config.SCREEN_H:
+			self.mouse_y.value = config.SCREEN_H
+		
+		logger.debug("Coordinates x:%s y:%s" % (self.mouse_x.value, self.mouse_y.value))
 	
 	def mouseRead(self, event):
 		""" Called whenever an SDL Event of type touchscreen or mouse click is detected, reads and stores pointer position """
@@ -211,8 +270,7 @@ def gfxInit():
 		logger.info("Current window: %sx%s" % (x.value, y.value))
 		
 		if (x.value != config.SCREEN_W) or (y.value != config.SCREEN_H):
-			logger.error("Unable to create a window of the requested size")
-			return False
+			logger.warn("Unable to create a window of the requested size")
 		
 		# Create a renderer to draw into the window
 		renderer = SDL_CreateRenderer(window, -1, 0, SDL_RENDERER_ACCELERATED);
@@ -225,7 +283,7 @@ def gfxInit():
 		TTF_Init()
 		
 		# Hide mouse cursor
-		#SDL_ShowCursor(SDL_DISABLE)
+		SDL_ShowCursor(SDL_DISABLE)
 		
 		return sdlWindowData
 	except Exception as e:
