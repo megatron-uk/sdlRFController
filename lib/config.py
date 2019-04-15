@@ -1,7 +1,7 @@
 APPLICATION_NAME = "sdlRFController"
 
 # Time between screen refresh/event checks
-REFRESH_TIME = 0.2
+REFRESH_TIME = 0.3
 
 # Amount of time (in terms of screen refreshes) until we drop all cached
 # surfaces and fonts and reload them again
@@ -14,13 +14,22 @@ INFO = 1
 # Screen size
 SCREEN_W = 480
 SCREEN_H = 320
-SCREEN_BPP = 24
+SCREEN_BPP = 16
 
 # Popup window size and location
 SCREEN_POPUP_W = int(SCREEN_W * (2/3))
 SCREEN_POPUP_H = int(SCREEN_H * (2/3))
 SCREEN_POPUP_X = int((SCREEN_W - SCREEN_POPUP_W) / 2)
 SCREEN_POPUP_Y = int((SCREEN_H - SCREEN_POPUP_H) / 2)
+
+# Touchscreen calibration - my Waveshare 3.5 has swapped axis - x == y
+TOUCH = {
+	'axis_reversed' : True,
+	'y_min' 	: 3880,
+	'y_max' 	: 250,
+	'x_min' 	: 300,
+	'x_max' 	: 3880,
+}
 
 # Default screen fill
 BACKGROUND_COLOUR = {
