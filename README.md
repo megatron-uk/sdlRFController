@@ -36,6 +36,50 @@ A `requirements.txt` file is provided with which you can automatically install a
 pip install -r requirements.txt
 ```
 
+### Installing touchscreen
+
+The touchscreen I'm using is a Waveshare/Goodtft 3.5", 480x320 model, interfaced to the Pi via the SPI bus (so not mega fast for high refresh use).
+
+Normally you run through the vendors *install* routine (which ends up being copying the kernel overlay modules to `/boot` and dropping configuration statements in to `/boot/config.txt`). Here's the simplified version:
+
+ - Install waveshare/goodtft driver/config
+ - Add rotation options to /boot/config.txt
+
+I had to add the following to `/boot/config.txt`:
+
+```
+framebuffer_width=480
+framebuffer_height=320
+
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=480 320 60 1 0 0 0
+hdmi_force_hotplug=1
+
+dtparam=spi=on
+
+dtoverlay=tft35a,speed=24000000,fps=30
+display_rotate=2
+```
+
+ - Install rpi-fbcp
+ - Add /usr/bin/fbcp to /etc/rc.local
+ - Add udev rules for touch interface so that it is seen as a proper touchscreen device (optional, some versions of Linux already do this when the driver is loaded):
+ 
+ /etc/udev/rules.d/95-ads7846.rules
+```
+ SUBSYSTEM=="input", KERNEL=="event[0-9]*", ATTRS{name}=="ADS7846 Touchscreen", SYMLINK+="input/touchscreen"
+```
+
+Install libts:
+`apt-get install libts-bin libts-dev libevdev-dev`
+
+Calibrate touchscreen:
+
+`TSLIB_FBDEVICE=/dev/fb1 TSLIB_TSDEVICE=/dev/input/touchscreen ts_calibrate`
+ 
+Presuming SDL was built with evdev support, it should work as a normal touch input event in SDL.
+
 ### libSDL without X11 for Raspbian
 
 Earlier versions of libSDL2 for Raspbian required the installation of the X11 server in order to produce graphics output. Clearly doing that is running extra stuff that we really don't want or need in an embedded device such as the Pi.
@@ -44,22 +88,35 @@ From libSDL2 v2.0.5 output using OpenGL ES *without* X11 running should be suppo
 
 To be certain you have a version of libSDL that supports OpenGLES output on the Pi *without* X11 you really need to build it from source *and* ensure that you don't have the Raspbian supplied SDL libraries installed.
 
-There is an easy way of doing this on Raspbian (https://github.com/simple2d/simple2d#on-linux), and that is:
-
 ```
 # Remove any vendor installed libsdl2 libraries
 apt-get remove libsdl2-dev libsdl2-ttf-dev libsdl2-2.0-0 libsdl2-ttf-2.0-0
+
+# Add input drivers - we'll need these later
+apt-get install libts-dev libevdev-dev
 
 # Create temp folder to build sdl2
 mkdir /tmp/sdl2
 cd /tmp/sdl2
 
-# Download self-contained configure/install script
-wget https://raw.githubusercontent.com/simple2d/simple2d/master/bin/simple2d.sh
-chmod +x simple2d.sh
+# Download SDL 2.0.10, or a release of 2.0.9 greater than r12671
+wget http://www.libsdl.org/tmp/SDL-2.0.zip
 
-# Run library installer which will build libs and drop them in /usr/local/lib
-./simple2d.sh install --sdl
+unzip SDL-2.0 
+cd SDL-2.0.9-12671
+
+./configure --host=arm-raspberry-linux-gnueabihf \
+	--disable-video-opengl \
+	--disable-video-x11 \
+	--disable-pulseaudio \
+	--disable-esd \
+	--disable-video-mir \
+	--disable-video-wayland \
+	--enable-video-rpi  \
+	--enable-input-tslib
+	
+# Compile - this takes a while!
+make && make install
 
 # Add newly installed lib dirs to library path
 echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf
@@ -100,10 +157,6 @@ sh build_rpi
 ```
 
 The resulting binary doesn't need to be installed, the pyenergenie code (and, ultimately sdlRFController) will use it from where you built it.
-
-### Installing touchscreen
-
-TO DO
 
 ### Installing Radio module
 
