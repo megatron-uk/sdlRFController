@@ -8,7 +8,7 @@ REFRESH_TIME = 0.05
 CACHE_CLEAR_TIME = 10
 
 # Enable more verbose output
-DEBUG = 1
+DEBUG = 0
 INFO = 1
 
 # Screen size
@@ -244,7 +244,7 @@ SCREENS = {
 					'image'	: "btn_xbox360.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'remote'	: 0x7bbff,
 					'socket'	: 1,
 					'tags'	: [],
 				},

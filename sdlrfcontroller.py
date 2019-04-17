@@ -104,22 +104,25 @@ def sdlRFController():
 		elib.init()
 		# Load all energenie sockets
 		for b in getAllButtons():
-			d = energenie.Devices.ENER002((b['remote'], b['socket']))
-			energenie_buttons.append(d)
-			logger.info("Adding device %s.%s" % (b['remote'], b['socket']))
+			b['device'] = elib.Devices.ENER002((b['remote'], b['socket']))
+			energenie_buttons.append(b)
+			logger.debug("Adding device %s.%s" % (str(hex(b['remote'])), b['socket']))
 			
 		# Load all energenie power monitor devices
 		for k in config.POWER_MONITORS:
-			d = energenie.Devices.MIHO004(deviceid = config.POWER_MONITORS[k]['deviceid'])
+			d = elib.Devices.MIHO004(device_id = config.POWER_MONITORS[k]['deviceid'])
 			energenie_monitors.append(d)
-			logger.info("Adding monitor %s.%s" % (b['remote'], b['socket']))
+			logger.debug("Adding monitor %s" % (str(hex(config.POWER_MONITORS[k]['deviceid']))))
+			
+		logger.info("Added %s Energenie power socket devices" % len(energenie_buttons))
+		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))
 	else:
 		logger.warning("Energenie radio functions not available")
 		
 	energenie = {
 		'lib' : elib,
 		'buttons' : energenie_buttons,
-		'monitor' : energenie_monitors,
+		'monitors' : energenie_monitors,
 	}		
 	
 	# Show page 1
@@ -162,14 +165,14 @@ def sdlRFController():
 			loop_count = 0
 		
 		# Read any broadcast power events and update data
-		if energenie['lib']:
-			energenie.loop()
-			for d in energenie['monitors']:
-				try:
-					pwr = d.get_power()
-					logger.debug(pwr)
-				except:
-					pass
+		#if energenie['lib']:
+		#	energenie['lib'].loop()
+			#for d in energenie['monitors']:
+			#	try:
+			#		pwr = d.get_power()
+			#		logger.debug(pwr)
+			#	except:
+			#		pass
 		
 		# Reset any touchscreen event
 		ts_event = False
@@ -179,7 +182,7 @@ def sdlRFController():
 			while not ts.queue_empty():
 				for e in ts.get_event():
 					ts_event = e
-					logger.info("Touch event [%s]" % ts_event)
+					logger.debug("Touch event [%s]" % ts_event)
 					# Map x and y coordinates
 					if 'y' in ts_event.keys():
 						if config.TOUCH['axis_reversed']:
@@ -361,6 +364,8 @@ def sdlRFController():
 				# End of all user-defined actions
 				#
 				#########################################
+				
+				ts_event = False
 			
 		######################################################
 		#
