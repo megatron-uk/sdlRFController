@@ -283,7 +283,8 @@ def gfxInit():
 		TTF_Init()
 		
 		# Hide mouse cursor
-		SDL_ShowCursor(SDL_DISABLE)
+		if config.SCREEN_HIDE_MOUSE:
+			SDL_ShowCursor(SDL_DISABLE)
 		
 		return sdlWindowData
 	except Exception as e:
@@ -302,11 +303,11 @@ def gfxLoadBMP(window = None, filename = None):
 	""" Load a bitmap file from disk, or from an already cached surface object """
 	
 	if filename in window.cachedSurfaces.keys():
-		logger.debug("Surface cache hit for bitmap [%s]" % filename)
+		#logger.debug("Surface cache hit for bitmap [%s]" % filename)
 		surface = window.cachedSurfaces[filename]
 		
 	else:
-		logger.debug("Loading bitmap from disk [%s]" % filename)
+		#logger.debug("Loading bitmap from disk [%s]" % filename)
 		surface = SDL_LoadBMP(str.encode(filename))
 		window.cachedSurfaces[filename] = surface
 	return surface
@@ -316,10 +317,10 @@ def gfxGetText(window, font, pt, sdl_colour, colour, text):
 	
 	k = str(font) + str(pt) + str(colour) + str(text)
 	if k in window.cachedSurfaces.keys():
-		logger.debug("Surface cache hit for text [%s:%s:%s:%s]" % (font, pt, str(colour), text))
+		#logger.debug("Surface cache hit for text [%s:%s:%s:%s]" % (font, pt, str(colour), text))
 		surface = window.cachedSurfaces[k]
 	else:
-		logger.debug("Generating text surface from string [%s]" % text)
+		#logger.debug("Generating text surface from string [%s]" % text)
 		surface = TTF_RenderText_Blended(font, str.encode(text), sdl_colour)
 		window.cachedSurfaces[k] = surface
 	return surface
@@ -329,10 +330,10 @@ def gfxGetFont(window, font, pt):
 	
 	k = str(font) + str(pt)
 	if k in window.cachedFonts.keys():
-		logger.debug("Font cache hit for font [%s:%s]" % (font, pt))
+		#logger.debug("Font cache hit for font [%s:%s]" % (font, pt))
 		font = window.cachedFonts[k]
 	else:
-		logger.debug("Loading font from disk [%s]" % font)
+		#logger.debug("Loading font from disk [%s]" % font)
 		font = TTF_OpenFont(str.encode(font), pt)
 		window.cachedFonts[k] = font
 	return font

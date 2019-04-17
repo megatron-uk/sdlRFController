@@ -37,6 +37,19 @@ from sdl2 import *
 # Set up a logger for this file
 logger = newlog(__file__)
 
+def renderFlash(window = None, page = None, button_clicked = None, power_mode = "ON", screen = None):
+	""" Flash a button on a page """
+	
+	if screen == "page":
+		renderPage(window, page = page, button_clicked = button_clicked, flash = True, power_mode = power_mode)
+	if screen == "status":
+		renderStatus(window, button_clicked = button_clicked, flash = True, power_mode = power_mode)
+	if screen == "monitor":
+		renderPowerMon(window, page = page, button_clicked = button_clicked, flash = True, power_mode = power_mode)
+	window.update()
+	
+	return True
+
 def renderButtonBar(window = None, button_clicked = None, flash = False, power_mode = "ON"):
 	""" Display the navigation / button bar along the bottom of the screen - common to all screens """
 	
@@ -49,6 +62,7 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	btn_config = gfxLoadBMP(window, config.ASSETS['btn_config'])
 	btn_back = gfxLoadBMP(window, config.ASSETS['btn_back'])
 	btn_fwd =  gfxLoadBMP(window, config.ASSETS['btn_fwd'])
+	btn_meter =  gfxLoadBMP(window, config.ASSETS['btn_meter'])
 	
 	# Power state indicator
 	if power_mode == "ON":
@@ -73,6 +87,20 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['x2'] = x_pos + btn_back.contents.w
 	button['y1'] = y_pos
 	button['y2'] = y_pos + btn_back.contents.h
+	window.boxes.append(button)
+	
+	# Put the power meter button at the bottom
+	x_pos = x_pos + btn_meter.contents.w + x_spacing # previous button, plus an offset
+	y_pos = config.SCREEN_H - btn_meter.contents.h
+	meter_rect = SDL_Rect(x_pos, y_pos, btn_meter.contents.w, btn_meter.contents.h)
+	SDL_BlitSurface(btn_meter, None, window.backbuffer, meter_rect)
+	button = {}
+	button['name'] = "btn_meter"
+	button['image'] =  config.ASSETS['btn_meter']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_meter.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_meter.contents.h
 	window.boxes.append(button)
 	
 	# Splat the power mode buttons at the bottom
@@ -339,7 +367,7 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
 	# CPU load
-	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (config.REFRESH_TIME * 4))) 
+	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (0.25))) 
 	y_pos = y_pos + text_surface.contents.h + 5
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	text_surface = TTF_RenderText_Blended(font, str.encode(text_cpu), font_colour)
@@ -414,7 +442,7 @@ def renderPage(window = None, page = 1, button_clicked = None, flash = False, po
 		y_pos = 0
 		buttons = getButtons(page, alignment)
 		for button in buttons:
-			logger.debug("Button %s.%s.%s:%s" % (page, button['align'], button['number'], button['text']))
+			#logger.debug("Button %s.%s.%s:%s" % (page, button['align'], button['number'], button['text']))
 	
 			# Left
 			if alignment == "L":
@@ -489,6 +517,20 @@ def renderPage(window = None, page = 1, button_clicked = None, flash = False, po
 		
 	# 3.
 	window.update()
+
+	g.cleanUp()
+	
+	return page
+	
+def renderPowerMon(window = None, page = 1, button_clicked = None, flash = False, power_mode = "ON", power_data = None):
+	""" Display a page of power consumption figures """
+	
+	logger.debug("Loading power monitor %s" % page)
+	
+	g = GarbageCleaner()
+	window.clear()
+
+	renderButtonBar(window = window, button_clicked = button_clicked, flash = flash, power_mode = power_mode)
 
 	g.cleanUp()
 	

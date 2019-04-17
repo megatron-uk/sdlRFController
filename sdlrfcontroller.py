@@ -23,20 +23,38 @@ import time
 import timeit
 import ctypes
 
+# Locals
 from lib import config
 from lib.newlog import newlog
-from lib.buttons import getPages, getButtonPower, setButtonPower
+from lib.buttons import getAllButtons, getPages, getButtonPower, setButtonPower
 from lib.pitft_touchscreen import pitft_touchscreen
 
 # SDL routines
 from sdl2 import *
 from lib.gfx import gfxInit, gfxClose, gfxSplashScreen
-from lib.render import renderPage, renderStatus, renderConfirmWindow
+from lib.render import renderPage, renderStatus, renderConfirmWindow, renderPowerMon, renderFlash
 
 # Set up a logger for this file
 logger = newlog(__file__)
 
+# Energenie
+try:
+	import energenie as elib
+except Exception as e:
+	logger.fatal("")
+	logger.fatal("========================= WARNING! =============================")
+	logger.fatal("You must have the pyenergenie library installed and configured")
+	logger.fatal("to use this application fully.")
+	logger.fatal("")
+	logger.fatal("Make sure you edit 'pyenergenie/src/energenie/drv/spis.c' with")
+	logger.fatal("your GPIO settings and then rebuild the driver with 'build_rpi'.")
+	logger.fatal("================================================================")
+	logger.fatal("")
+	elib = False
+
 def sdlRFController():
+	
+	sdl_detected_events = [SDL_KEYDOWN, SDL_MOUSEBUTTONDOWN, SDL_FINGERDOWN, SDL_FINGERMOTION, SDL_QUIT]
 	
 	# Defaults for first page shown
 	running = True
@@ -53,15 +71,6 @@ def sdlRFController():
 		logger.error("Unable to continue - Exit")
 		return 1
 
-	# Try to init touchscreen
-	try:
-		ts = pitft_touchscreen()
-		logger.info("Touchscreen input enabled")
-	except Exception as e:
-		logger.warn("Touchscreen input not available")
-		logger.debug(e)
-		ts = False
-
 	# Clear the canvas and show it
 	window.clear()
 	window.update()
@@ -73,12 +82,57 @@ def sdlRFController():
 	window.clear()
 	window.update()
 	
+	# Try to init touchscreen
+	try:
+		ts = pitft_touchscreen()
+		if ts.is_enabled():
+			logger.info("Touchscreen input enabled")
+			ts.start()
+		else:
+			logger.warn("Touchscreen input not available")
+			ts = False
+	except Exception as e:
+		logger.warn("Touchscreen input not available")
+		logger.debug(e)
+		ts = False
+	
+	# Start up the energenie radio interface library
+	energenie_buttons = []
+	energenie_monitors = []
+	if elib:
+		
+		elib.init()
+		# Load all energenie sockets
+		for b in getAllButtons():
+			d = energenie.Devices.ENER002((b['remote'], b['socket']))
+			energenie_buttons.append(d)
+			logger.info("Adding device %s.%s" % (b['remote'], b['socket']))
+			
+		# Load all energenie power monitor devices
+		for k in config.POWER_MONITORS:
+			d = energenie.Devices.MIHO004(deviceid = config.POWER_MONITORS[k]['deviceid'])
+			energenie_monitors.append(d)
+			logger.info("Adding monitor %s.%s" % (b['remote'], b['socket']))
+	else:
+		logger.warning("Energenie radio functions not available")
+		
+	energenie = {
+		'lib' : elib,
+		'buttons' : energenie_buttons,
+		'monitor' : energenie_monitors,
+	}		
+	
 	# Show page 1
 	renderPage(window = window, page = page)
 	window.update(transition = transition)
 	
 	# SDL event handler
 	sdl_event = SDL_Event()
+	for t in sdl_detected_events:
+		logger.debug("SDL event type [%s]" % t)
+	
+	# TS / Evdev
+	ts_event = False
 	
 	# Default switch mode
 	power_mode = "ON"
@@ -88,26 +142,40 @@ def sdlRFController():
 	clicked = False
 	redraw = True
 	loop_count = 0
+		
+	# Open up the radio device
+	radio = None
 	
-	# Start collecting touchscreen input
-	if ts:
-		ts.start()
+	# Power data from any connected power socket monitor stations
+	power_data = {}
+		
 	# Event handler
 	while running:
+		
+		# Sleep a minimum amount of time each loop - we don't want to 
+		# peg the cpu at 100% just looping...
+		time.sleep(config.REFRESH_TIME)
 		
 		# Dump any cached surfaces or fonts
 		if loop_count > config.CACHE_CLEAR_TIME:
 			window.clearCache()	
 			loop_count = 0
-			
-		time.sleep(config.REFRESH_TIME)
 		
-		# Reset events
-		sdl_event = False
+		# Read any broadcast power events and update data
+		if energenie['lib']:
+			energenie.loop()
+			for d in energenie['monitors']:
+				try:
+					pwr = d.get_power()
+					logger.debug(pwr)
+				except:
+					pass
+		
+		# Reset any touchscreen event
 		ts_event = False
 		
+		# Read any available touchscreen events
 		if ts:
-			# Read ann touchscreen events
 			while not ts.queue_empty():
 				for e in ts.get_event():
 					ts_event = e
@@ -123,33 +191,41 @@ def sdlRFController():
 							window.touch_x_raw = ts_event['y']
 						else:
 							window.touch_x_raw = ts_event['x']
-		else:
-			# Read an SDL event, if there is one
-			SDL_PollEvent(ctypes.byref(sdl_event))
+		
+		#############################################################
+		#
+		# This section only fires if an input event is detected
+		#
+		#############################################################
+		
+		# Read an SDL event, if there is one, or proceed to process a touchscreen event
+		while (SDL_PollEvent(ctypes.byref(sdl_event))) or (ts_event != False):
+			loop_count += 1
 			
-		if ((sdl_event != 0)  and (sdl_event.type != 0)) or (ts_event != False) :
-			if ts_event:
-				logger.debug("Process Touch event [%s]" % ts_event)
-			if sdl_event:
-				logger.debug("Process SDL event [%s type %s]" % (sdl_event, sdl_event.type))
-			loop_count += 1	
 			if (sdl_event and (sdl_event.type)) == SDL_QUIT:
+				################################################
+				#
 				# Handle the quit signal tasks (control-c, close of terminal, window etc)
+				#
+				################################################
 				logger.info("Quit signal detected")
 				running = False
-				#break				
+				break				
 				
-			if (sdl_event and (sdl_event.type in [SDL_KEYDOWN, SDL_MOUSEBUTTONDOWN, SDL_FINGERDOWN, SDL_FINGERMOTION])) or (ts_event):
+			if (sdl_event and (sdl_event.type in sdl_detected_events)) or (ts_event):
 				################################################
 				#
 				# Handle keyboard or mouse input
 				#
 				################################################
 				
+				# SDL Keyboard
 				if (sdl_event and (sdl_event.type == SDL_KEYDOWN)):
 					logger.debug("SDL Keyboard input")
 					button = False
 					clicked = False
+					
+				# SDL Mouse click
 				if (sdl_event and (sdl_event.type == SDL_MOUSEBUTTONDOWN)):
 					window.mouseRead(sdl_event)
 					button = window.boxPressed()
@@ -158,6 +234,8 @@ def sdlRFController():
 					else:
 						clicked = False
 					logger.debug("SDL Mouse input [box:%s]" % clicked)
+					
+				# SDL touch 
 				if (sdl_event and (sdl_event.type == SDL_FINGERDOWN)):
 					window.mouseRead(sdl_event)
 					button = window.boxPressed()
@@ -167,6 +245,7 @@ def sdlRFController():
 						clicked = False
 					logger.debug("SDL Touch input [box:%s]" % clicked)
 					
+				# Linux evdev touchscreen
 				if (ts_event):
 					window.touchRead(ts_event)
 					button = window.boxPressed()
@@ -175,58 +254,45 @@ def sdlRFController():
 					else:
 						clicked = False
 					logger.debug("Touchscreen input [box:%s]" % clicked)
-				
-				#break
-				
+					
+				#############################################################
+				#
+				# All the actions we do based on input are defined below
+				#
+				#############################################################
+					
+				# We clicked on a device button, so send a power signal to that device (and any child devices defined in its' poweron or poweroff fields)
 				if clicked == "deviceClick":
 					# Flash the button to indicate click
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					
 					# Run the device RF power command
 					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
-					setButtonPower(button, state = power_mode)
+					setButtonPower(energenie = energenie, button = button, state = power_mode)
 					redraw = False
-					#break
 				
+				# Show the 'do you want to restart' overlay message
 				if (clicked == "btn_restart"):
 					old_screen = screen
 					renderConfirmWindow(window = window, header = "Application Restart", text = "This will restart the application.\nAre you sure?")
 					screen = "restart"
 					redraw = False
-					#break
 				
+				# Restart application
 				if (screen == "restart") and (clicked == "btn_confirm"):
-					# Restart application
 					logger.info("Restarting application")
 					python = sys.executable
 					os.execl(python, python, *sys.argv)
 					
-				if (screen == "restart") and (clicked == "btn_cancel"):
-					# Cancel restart overlay
+				# Cancel restart overlay
+				if (clicked == "btn_cancel"):
 					screen = old_screen
 					redraw = True
-					#break
 				
-				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_s)) or (clicked == "btn_config"):
-					button = window.boxPressedByName(name = "btn_config")		
-					if screen == "status":
-						# Go back to main pages
-						renderStatus(window, button_clicked = button, flash = True, power_mode = power_mode)
-						renderPage(window, page = page, button_clicked = button, flash = False, power_mode = power_mode)
-						screen = "page"
-						redraw = False
-						#break
-					else:
-						# Draw status screen
-						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
-						renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
-						screen = "status"
-						redraw = True
-				
-				if (screen == "page") and (clicked == "btn_power"):
+				if (clicked == "btn_power"):
 					# Flash the button to indicate click
-					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
-				
+					renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
+					
 					# Change power button mode
 					if power_mode == "ON":
 						power_mode = "OFF"
@@ -235,16 +301,43 @@ def sdlRFController():
 						
 					# Redraw screen
 					redraw = True
-					#break
 				
-				if sdl_event:
-					if (sdl_event.key.keysym.sym == SDLK_q):
-						# Exit from the running application
-						running = False
-						#break
+				# If we clicked the status/config button/key, toggle between status/config screen on/off.
+				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_s)) or (clicked == "btn_config"):
+					button = window.boxPressedByName(name = "btn_config")		
+					if (screen != "status"):
+						# Draw status screen
+						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
+						renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
+						screen = "status"
+						redraw = True
+					else:
+						# Go back to main pages
+						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+						screen = "page"
+						redraw = True
 				
-				if (screen == "page") and ((sdl_event and (event.key.keysym.sym == SDLK_RIGHT)) or (clicked == "btn_fwd")):
-					# Forward a page
+				# If we clicked the power monitor button/key, toggle between power monitor screen on/off.
+				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_p)) or (clicked == "btn_meter"):
+					button = window.boxPressedByName(name = "btn_meter")	
+					if (screen != "monitor"):
+						# Flash the button to indicate click and change to the power monitor screen
+						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
+						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, power_data = power_data)
+						screen = "monitor"
+						redraw = True
+					else:
+						# Flash the button to indicate click and change back to the button page
+						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
+						screen = "page"
+						redraw = True
+				
+				# If we pressed the keyboard Q/q key, exit from the running application
+				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_q)):
+					running = False
+				
+				# If we pressed the right cursor key, or clicked on the right button, scroll one page right
+				if (screen == "page") and ((sdl_event and (sdl_event.key.keysym.sym == SDLK_RIGHT)) or (clicked == "btn_fwd")):
 					button = window.boxPressedByName(name = "btn_fwd")
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					if page < getPages()[-1]:
@@ -252,10 +345,9 @@ def sdlRFController():
 					else:
 						page = 1
 					redraw = True
-					#break
-						
-				if (screen == "page") and ((sdl_event and (event.key.keysym.sym == SDLK_LEFT)) or (clicked == "btn_back")):
-					# Back a page
+				
+				# If we pressed the left cursor key, or clicked on the left button, scroll one page left
+				if (screen == "page") and ((sdl_event and (sdl_event.key.keysym.sym == SDLK_LEFT)) or (clicked == "btn_back")):
 					button = window.boxPressedByName(name = "btn_back")
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					if page > 1:
@@ -263,27 +355,54 @@ def sdlRFController():
 					else:
 						page = getPages()[-1]
 					redraw = True
-					#break
 						
-			else:
-				# Unsupported event type - just redraw the current screen
-				pass
+				#########################################
+				#
+				# End of all user-defined actions
+				#
+				#########################################
 			
+		######################################################
+		#
+		# Because of user input, OR if a screen left the state
+		# as 'redraw = True', continue to redraw the current screen
+		#
+		######################################################
 		if redraw:
-			# Because of user input, redraw the chosen screen
+			# Re-render the main device button page
 			if screen == "page":
+				# This redraws once and waits for input
 				renderPage(window, page = page, button_clicked = button, flash = False, power_mode = power_mode)
 				redraw = False
+				
+			# Re-render the status/sysinfo page
 			if screen == "status":
+				# This redraws continuously
 				renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
+				
+			# Re-render the power monitor page
+			if screen == "monitor":
+				# This redraws continuously
+				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode)
+			
+			# Flush updated screen buffer to display
 			window.update(transition = transition)
-		
-	# Clean up the SDL libary
-	gfxClose()
-
-        # Stop touchscreen
+	
+	# Stop radio
+	if energenie['lib']:
+		logger.info("Shutting down energenie library")
+		energenie['lib'].finished()
+	
+	# Stop touchscreen
 	if ts:
+		logger.info("Shutting down touchscreen library")
 		ts.stop()
+	
+	# Clean up the SDL and TTF libraries
+	logger.info("Shutting down SDL library")
+	gfxClose()
+		
+	# Finally exit the application
 	return 0
 	
 if __name__ == '__main__':

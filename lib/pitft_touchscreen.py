@@ -20,10 +20,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from lib.newlog import newlog
+
 try:
     import evdev
 except ImportError:
-    print("Evdev package is not installed.  Run 'pip3 install evdev' or 'pip install evdev' (Python 2.7) to install.")
+    logger.fatal("")
+    logger.fatal("========================= WARNING! =============================")
+    logger.fatal("You must have the python evdev library installed and configured")
+    logger.fatal("to use this application with a Pi based touchscreen.")
+    logger.fatal("================================================================")
+    logger.fatal("")
     raise(ImportError("Evdev package not found."))
 import threading
 try:
@@ -33,6 +40,8 @@ except ImportError:
     # python 2.7
     import Queue as queue
 
+# Set up a logger for this file
+logger = newlog(__file__)
 
 # Class for handling events from piTFT
 class pitft_touchscreen(threading.Thread):
@@ -42,6 +51,16 @@ class pitft_touchscreen(threading.Thread):
         self.grab = grab
         self.events = queue.Queue()
         self.shutdown = threading.Event()
+
+    def is_enabled(self):
+        try:
+            device = evdev.InputDevice(self.device_path)
+            device.close()
+            logger.info("Touchscreen device opened")
+            return True
+        except Exception as ex:
+            logger.warn("Touchscreen device not found [%s]" % self.device_path)
+            False
 
     def run(self):
         thread_process = threading.Thread(target=self.process_device)
@@ -67,6 +86,7 @@ class pitft_touchscreen(threading.Thread):
         finally:
             if device is None:
                 self.shutdown.set()
+             
         # Loop for getting evdev events
         event = {'time': None, 'id': None, 'x': None, 'y': None, 'touch': None}
         dropping = False
@@ -124,6 +144,7 @@ class pitft_touchscreen(threading.Thread):
         return self.events.empty()
 
     def stop(self):
+        logger.info("Shutting down touchscreen")
         self.shutdown.set()
 
     def __del__(self):

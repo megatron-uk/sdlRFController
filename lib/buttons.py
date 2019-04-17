@@ -23,6 +23,16 @@ from lib.newlog import newlog
 # Set up a logger for this file
 logger = newlog(__file__)
 
+def getAllButtons():
+	""" Return all buttons / devices """
+	
+	buttons = []
+	for p in getPages():
+		buttons += getButtons(p, "L")
+		buttons += getButtons(p, "R")
+		
+	return buttons
+
 def getPages():
 	""" Return screen list """
 	
@@ -67,7 +77,7 @@ def getButtonPower(button):
 	
 	pass
 
-def setButtonPower(button, state = "ON"):
+def setButtonPower(energenie = None, button = None, state = "ON"):
 	""" Send a power state message to a device represented by a button """
 	
 	
@@ -94,10 +104,34 @@ def setButtonPower(button, state = "ON"):
 					
 				for b in buttons:
 					logger.debug("Calling %s.%s with %s [%s]" % (b['remote'], b['socket'], action['action'], b['text']))
+					
+					# Create device and send signal
+					if energenie:
+						for d in energenie['buttons']:
+							if (d['remote'] == b['remote']) and (d['socket'] == b['socket']):
+								if action['action'] == "ON":
+									d.turn_on()
+								if action['action'] == "OFF":
+									d.turn_off()
 			else:
 				# Single fire action, just call with remote id and socket id
 				logger.debug("Single fire action")
 				logger.debug("Calling %s.%s with %s" % (action['remote'], action['socket'], action['action']))
+				
+				# Create device and send signal
+				if energenie:
+					for d in energenie['buttons']:
+						if (d['remote'] == action['remote']) and (d['socket'] == action['socket']):
+							if action['action'] == "ON":
+								d.turn_on()
+							if action['action'] == "OFF":
+								d.turn_off()
 	else:
 		logger.warn("No %s action defined" % action_type)
-		
+	
+def getPowerMonitor(energenie = None):
+	""" Listen for any broadcast power signals """
+	
+	
+	# Listen for broadcasts
+	return 

@@ -1,20 +1,21 @@
 APPLICATION_NAME = "sdlRFController"
 
 # Time between screen refresh/event checks
-REFRESH_TIME = 0.3
+REFRESH_TIME = 0.05
 
 # Amount of time (in terms of screen refreshes) until we drop all cached
 # surfaces and fonts and reload them again
 CACHE_CLEAR_TIME = 10
 
 # Enable more verbose output
-DEBUG = 0
+DEBUG = 1
 INFO = 1
 
 # Screen size
 SCREEN_W = 480
 SCREEN_H = 320
 SCREEN_BPP = 16
+SCREEN_HIDE_MOUSE = 0
 
 # Popup window size and location
 SCREEN_POPUP_W = int(SCREEN_W * (2/3))
@@ -59,6 +60,7 @@ ASSETS = {
         'btn_back'		: ASSETS_FOLDER + 'btn_default_back2.bmp',
         'btn_confirm'	: ASSETS_FOLDER + 'btn_confirm.bmp',
         'btn_cancel'	: ASSETS_FOLDER + 'btn_cancel.bmp',
+        'btn_meter'		: ASSETS_FOLDER + 'btn_meter.bmp',
 }
 
 # Font files
@@ -410,5 +412,20 @@ SCREENS = {
 				},
 			},
 		},
+	},
+}
+
+# A list of any power monitor devices (MIHO004) that we can listen for
+# broadcast signals from, to get the current power draw. This data can
+# be viewed on the power monitor screen ('p' on the keyboard, or the 
+# 'meter/gauge' button).
+POWER_MONITORS = {
+	1 : {
+		'text' 		: "Wall socket 1",
+		'deviceid'	: 0x00000,
+	},
+	2 : {
+		'text' 		: "Wall socket 2",
+		'deviceid'	: 0x00000,
 	},
 }
