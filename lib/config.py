@@ -72,6 +72,10 @@ FONT_BUTTON = ASSETS_FOLDER + "verdanab.ttf"
 FONT_BUTTON_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
 FONT_BUTTON_PT = 28
 
+FONT_MONITOR = ASSETS_FOLDER + "verdanab.ttf"
+FONT_MONITOR_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
+FONT_MONITOR_PT = 20
+
 FONT_INFO = ASSETS_FOLDER + "verdana.ttf"
 FONT_INFO_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
 FONT_INFO_PT = 18

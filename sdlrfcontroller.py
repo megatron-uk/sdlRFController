@@ -22,6 +22,7 @@ import sys
 import time
 import timeit
 import ctypes
+from types import SimpleNamespace
 
 # Locals
 from lib import config
@@ -42,6 +43,7 @@ elib = False
 try:
 	import energenie as elib
 except Exception as e:
+	logger.error(e)
 	logger.fatal("")
 	logger.fatal("========================= WARNING! =============================")
 	logger.fatal("You must have the pyenergenie library installed and configured")
@@ -52,6 +54,26 @@ except Exception as e:
 	logger.fatal("================================================================")
 	logger.fatal("")
 elib = False
+
+class dummyDevice():
+	""" Dummy Energenie device """
+
+	def __init__(self):
+		""" Dummy init """
+		pass
+
+	def get_readings(self):
+		""" Dummy sensor readings """
+		readings = {
+			'voltage'			: 242.1,
+			'frequency'			: 51.0,
+			'current'			: 7.1,
+			'apparent_power'	: 35,
+			'reactive_power'	: 38,
+			'real_power'		: 32,
+		}
+		d = SimpleNamespace(**readings)
+		return d
 
 def sdlRFController():
 	
@@ -117,6 +139,13 @@ def sdlRFController():
 		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))
 	else:
 		logger.warn("Energenie radio functions not available")
+		# Add some dummy energy monitoring devices
+		dd1 = dummyDevice()
+		dd2 = dummyDevice()
+		dd3 = dummyDevice()
+		energenie_monitors.append(dd1)
+		energenie_monitors.append(dd2)
+		energenie_monitors.append(dd3)
 		
 	energenie = {
 		'lib' : elib,
@@ -150,9 +179,6 @@ def sdlRFController():
 		
 	# Open up the radio device
 	radio = None
-	
-	# Power data from any connected power socket monitor stations
-	power_data = {}
 		
 	# Event handler
 	while running:
@@ -167,14 +193,14 @@ def sdlRFController():
 			loop_count = 0
 		
 		# Read any broadcast power events and update data
-		#if energenie['lib']:
-		#	energenie['lib'].loop()
-			#for d in energenie['monitors']:
-			#	try:
-			#		pwr = d.get_power()
-			#		logger.debug(pwr)
-			#	except:
-			#		pass
+		if energenie['lib']:
+			energenie['lib'].loop()
+			for d in energenie['monitors']:
+				try:
+					pwr = d.get_power()
+					logger.debug(pwr)
+				except:
+					pass
 		
 		# Reset any touchscreen event
 		ts_event = False
@@ -337,7 +363,7 @@ def sdlRFController():
 					button = window.boxPressedByName(name = "btn_config")		
 					if (screen != "status"):
 						# Draw status screen
-						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
+						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen, energenie = energenie)
 						renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
 						screen = "status"
 						redraw = True
@@ -353,8 +379,7 @@ def sdlRFController():
 					if (screen != "monitor"):
 						# Flash the button to indicate click and change to the power monitor screen
 						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
-						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, power_data = power_data)
-						#renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
+						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie)
 						screen = "monitor"
 						redraw = True
 					else:
@@ -416,7 +441,7 @@ def sdlRFController():
 			# Re-render the power monitor page
 			if screen == "monitor":
 				# This redraws continuously
-				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode)
+				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie)
 			
 			# Flush updated screen buffer to display
 			window.update(transition = transition)
