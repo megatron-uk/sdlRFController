@@ -38,6 +38,7 @@ from lib.render import renderPage, renderStatus, renderConfirmWindow, renderPowe
 logger = newlog(__file__)
 
 # Energenie
+elib = False
 try:
 	import energenie as elib
 except Exception as e:
@@ -50,17 +51,16 @@ except Exception as e:
 	logger.fatal("your GPIO settings and then rebuild the driver with 'build_rpi'.")
 	logger.fatal("================================================================")
 	logger.fatal("")
-	elib = False
+elib = False
 
 def sdlRFController():
 	
+	# SDL only listens for these types of input, all others are ignored
 	sdl_detected_events = [SDL_KEYDOWN, SDL_MOUSEBUTTONDOWN, SDL_FINGERDOWN, SDL_FINGERMOTION, SDL_QUIT]
 	
 	# Defaults for first page shown
 	running = True
-	# Default transition effect
 	transition = None
-	# Initial page
 	page = 1
 	
 	logger.info("Starting...")
@@ -100,7 +100,6 @@ def sdlRFController():
 	energenie_buttons = []
 	energenie_monitors = []
 	if elib:
-		
 		elib.init()
 		# Load all energenie sockets
 		for b in getAllButtons():
@@ -117,7 +116,7 @@ def sdlRFController():
 		logger.info("Added %s Energenie power socket devices" % len(energenie_buttons))
 		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))
 	else:
-		logger.warning("Energenie radio functions not available")
+		logger.warn("Energenie radio functions not available")
 		
 	energenie = {
 		'lib' : elib,
@@ -145,6 +144,9 @@ def sdlRFController():
 	clicked = False
 	redraw = True
 	loop_count = 0
+	old_button = {'name' : None}
+	old_time = time.time()
+	last_ts = time.time()
 		
 	# Open up the radio device
 	radio = None
@@ -250,6 +252,12 @@ def sdlRFController():
 					
 				# Linux evdev touchscreen
 				if (ts_event):
+					ts_interval = (ts_event['time'] - last_ts)
+					if ts_interval < config.BUTTON_BOUNCE_TIME:
+						logger.debug("Ignoring touchscreen input [%.2fs]" % ts_interval)
+						ts_event = False
+						break
+					
 					window.touchRead(ts_event)
 					button = window.boxPressed()
 					if button:
@@ -257,6 +265,25 @@ def sdlRFController():
 					else:
 						clicked = False
 					logger.debug("Touchscreen input [box:%s]" % clicked)
+					
+					# Debounce check - only allow multiple clicks to the
+					# same button after a minimum time delay, to reduce 
+					# button bouncing.
+					if (button) and ('name' in button.keys()):
+						if (old_button) and ('name' in old_button.keys()):
+							if button['name'] == old_button['name']:
+								double_click_time = time.time() - old_time
+								if double_click_time < config.BUTTON_BOUNCE_TIME:
+									# Break from loop and do no further processing of this button click
+									logger.debug("Ignoring touchscreen input - possible button bounce [%.2fs < %ss]" % (double_click_time, config.BUTTON_BOUNCE_TIME))
+									ts_event = False
+									break
+								else:
+									logger.debug("Accepting touchscreen input - long double click [%.2fs]" % double_click_time)
+							
+					old_button = button
+					old_time = time.time()
+					last_ts = ts_event['time']
 					
 				#############################################################
 				#
@@ -270,7 +297,7 @@ def sdlRFController():
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					
 					# Run the device RF power command
-					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
+					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], str(hex(button['remote'])), button['socket']))
 					setButtonPower(energenie = energenie, button = button, state = power_mode)
 					redraw = False
 				
@@ -327,6 +354,7 @@ def sdlRFController():
 						# Flash the button to indicate click and change to the power monitor screen
 						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
 						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, power_data = power_data)
+						#renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
 						screen = "monitor"
 						redraw = True
 					else:

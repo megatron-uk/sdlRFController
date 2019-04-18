@@ -91,6 +91,9 @@ BUTTON_HEIGHT = 60
 # How long a button flashes
 BUTTON_FLASH_DELAY = 0.2
 
+# How long between presses a button will respond to touchscreen
+BUTTON_BOUNCE_TIME = 0.7
+
 # A structure defining which buttons should be on which pages
 SCREENS = {
 	# First page

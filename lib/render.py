@@ -102,20 +102,7 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['y1'] = y_pos
 	button['y2'] = y_pos + btn_meter.contents.h
 	window.boxes.append(button)
-	
-	# Splat the power mode buttons at the bottom
-	x_pos = x_pos + btn_back.contents.w + x_spacing # previous button, plus an offset
-	y_pos = config.SCREEN_H - btn_power.contents.h
-	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
-	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
-	button = {}
-	button['name'] = "btn_power"
-	button['image'] =  btn_power_image
-	button['x1'] = x_pos
-	button['x2'] = x_pos + btn_power.contents.w
-	button['y1'] = y_pos
-	button['y2'] = y_pos + btn_power.contents.h
-	window.boxes.append(button)
+
 	
 	# Splat the config/status buttons at the bottom
 	x_pos = x_pos + btn_power.contents.w + x_spacing # previous button, plus an offset
@@ -129,6 +116,20 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['x2'] = x_pos + btn_config.contents.w
 	button['y1'] = y_pos
 	button['y2'] = y_pos + btn_config.contents.h
+	window.boxes.append(button)
+	
+		# Splat the power mode buttons at the bottom
+	x_pos = x_pos + btn_back.contents.w + x_spacing # previous button, plus an offset
+	y_pos = config.SCREEN_H - btn_power.contents.h
+	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
+	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
+	button = {}
+	button['name'] = "btn_power"
+	button['image'] =  btn_power_image
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_power.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_power.contents.h
 	window.boxes.append(button)
 	
 	# Splat the restart buttons at the bottom
@@ -195,11 +196,21 @@ def renderConfirmWindow(window = None, header = None, text = None):
 		amask = 0xff000000
 	
 	# Create a surface with the alpha channel set
-	overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, 32 , rmask , gmask , bmask , amask )
-	g.regS(overlay_surface)
-	overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
-	SDL_FillRect(overlay_surface, None , 0xBB0F0F0F) # ARGB format
-	SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
+	driver_name = SDL_GetCurrentVideoDriver()
+	if bytes.decode(driver_name) != "RPI":
+		logger.debug("Using transparency overlay")
+		overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, config.SCREEN_BPP , rmask , gmask , bmask , amask )
+		g.regS(overlay_surface)
+		overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
+		SDL_FillRect(overlay_surface, None , 0xBB0F0F0F) # ARGB format
+		SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
+	else:
+		logger.debug("Not using transparency with RPI driver")
+		overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, config.SCREEN_BPP , 0 , 0 , 0 , 255 )
+		g.regS(overlay_surface)
+		overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
+		SDL_FillRect(overlay_surface, None , 0x00000000) # ARGB format
+		SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
 
 	# Print the header in reverse text in the overlay box
 	if header is not None:
@@ -258,13 +269,14 @@ def renderConfirmWindow(window = None, header = None, text = None):
 	
 	window.update()
 	
-	# Redraw on the existing renderer
-	SDL_SetRenderDrawColor(window.renderer, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'], SDL_ALPHA_OPAQUE)
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y);
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
-	window.update(reuse_texture = True)
+	if bytes.decode(driver_name) != "RPI":
+		# Redraw on the existing renderer
+		SDL_SetRenderDrawColor(window.renderer, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'], SDL_ALPHA_OPAQUE)
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y);
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+		window.update(reuse_texture = True)
 	
 	g.cleanUp()
 
@@ -367,7 +379,7 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
 	# CPU load
-	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (0.25))) 
+	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (0.5))) 
 	y_pos = y_pos + text_surface.contents.h + 5
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	text_surface = TTF_RenderText_Blended(font, str.encode(text_cpu), font_colour)

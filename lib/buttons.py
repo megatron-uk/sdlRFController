@@ -142,7 +142,7 @@ def setButtonPower(energenie = None, button = None, state = "ON"):
 			if sent:
 				logger.debug("Sent signal to %s.%s" % (str(hex(d['remote'])), d['socket']))
 			else:
-				logger.warn("Signal not sent to %s.%s" % (str(hex(d['remote'])), d['socket']))
+				logger.warn("Signal not sent to %s.%s" % (str(hex(button['remote'])), button['socket']))
 	else:
 		logger.warn("No %s action defined" % action_type)
 	
