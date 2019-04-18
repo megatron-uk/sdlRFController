@@ -199,7 +199,7 @@ def renderConfirmWindow(window = None, header = None, text = None):
 	driver_name = SDL_GetCurrentVideoDriver()
 	if bytes.decode(driver_name) != "RPI":
 		logger.debug("Using transparency overlay")
-		overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, config.SCREEN_BPP , rmask , gmask , bmask , amask )
+		overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, 32 , rmask , gmask , bmask , amask )
 		g.regS(overlay_surface)
 		overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
 		SDL_FillRect(overlay_surface, None , 0xBB0F0F0F) # ARGB format
@@ -268,6 +268,7 @@ def renderConfirmWindow(window = None, header = None, text = None):
 	window.boxes.append(button)
 	
 	window.update()
+	time.sleep(0.1)
 	
 	if bytes.decode(driver_name) != "RPI":
 		# Redraw on the existing renderer
