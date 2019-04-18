@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import random
 import os
 import sys
 import time
@@ -64,13 +65,14 @@ class dummyDevice():
 
 	def get_readings(self):
 		""" Dummy sensor readings """
+		
 		readings = {
-			'voltage'			: 242.1,
-			'frequency'			: 51.0,
-			'current'			: 7.1,
-			'apparent_power'	: 35,
-			'reactive_power'	: 38,
-			'real_power'		: 32,
+			'voltage'			: random.uniform(230.0, 241.9),
+			'frequency'			: random.uniform(48.2, 52.7),
+			'current'			: random.uniform(0.2, 13.0),
+			'apparent_power'	: random.uniform(0.0, 300),
+			'reactive_power'	: random.uniform(0.0, 300),
+			'real_power'		: random.uniform(0.0, 300),
 		}
 		d = SimpleNamespace(**readings)
 		return d
@@ -146,6 +148,7 @@ def sdlRFController():
 		energenie_monitors.append(dd1)
 		energenie_monitors.append(dd2)
 		energenie_monitors.append(dd3)
+		energenie_monitors.append(dd2)
 		
 	energenie = {
 		'lib' : elib,
@@ -176,6 +179,7 @@ def sdlRFController():
 	old_button = {'name' : None}
 	old_time = time.time()
 	last_ts = time.time()
+	graph_mode = None
 		
 	# Open up the radio device
 	radio = None
@@ -363,7 +367,7 @@ def sdlRFController():
 					button = window.boxPressedByName(name = "btn_config")		
 					if (screen != "status"):
 						# Draw status screen
-						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen, energenie = energenie)
+						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen, energenie = energenie, graph_mode = graph_mode)
 						renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
 						screen = "status"
 						redraw = True
@@ -379,7 +383,7 @@ def sdlRFController():
 					if (screen != "monitor"):
 						# Flash the button to indicate click and change to the power monitor screen
 						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
-						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie)
+						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie, graph_mode = graph_mode)
 						screen = "monitor"
 						redraw = True
 					else:
@@ -387,6 +391,11 @@ def sdlRFController():
 						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 						screen = "page"
 						redraw = True
+				
+				# Toggle the type of information shown in the power monitor screen - text numbers or scrolling chart, etc
+				if (screen == "monitor") and (clicked in ["btn_graph", "btn_graph_numbers"]):
+					graph_mode = clicked
+					redraw = True
 				
 				# If we pressed the keyboard Q/q key, exit from the running application
 				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_q)):
@@ -441,7 +450,7 @@ def sdlRFController():
 			# Re-render the power monitor page
 			if screen == "monitor":
 				# This redraws continuously
-				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie)
+				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie, graph_mode = graph_mode)
 			
 			# Flush updated screen buffer to display
 			window.update(transition = transition)

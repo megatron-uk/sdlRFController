@@ -61,6 +61,12 @@ ASSETS = {
         'btn_confirm'	: ASSETS_FOLDER + 'btn_confirm.bmp',
         'btn_cancel'	: ASSETS_FOLDER + 'btn_cancel.bmp',
         'btn_meter'		: ASSETS_FOLDER + 'btn_meter.bmp',
+        'btn_graph'		: ASSETS_FOLDER + 'btn_graph.bmp',
+        'btn_graph_numbers'	: ASSETS_FOLDER + 'btn_graph_numbers.bmp',
+        'btn_graph_volts'	: ASSETS_FOLDER + 'btn_graph_volts.bmp',
+        'btn_graph_watt'	: ASSETS_FOLDER + 'btn_graph_watt.bmp',
+        'btn_graph_hz'		: ASSETS_FOLDER + 'btn_graph_hz.bmp',
+        'btn_graph_amp'		: ASSETS_FOLDER + 'btn_graph_amp.bmp',
 }
 
 # Font files
