@@ -90,42 +90,59 @@ def setButtonPower(energenie = None, button = None, state = "ON"):
 		
 	if action_type in button.keys():
 		
-		# Unroll the poweron/off action list
-		for action in button[action_type]:
-			
-			# Is it a composite/macro action?
-			if 'tags' in action.keys():
-				logger.debug("Macro action")
+		if len(button[action_type]) > 0:
+			# Unroll the poweron/off action list
+			for action in button[action_type]:
 				
-				# Find all of the devices/buttons (except the current one) with this tag
-				buttons = []
-				for t in action['tags']:
-					buttons += getButtonsForTag(tag = t, exclude = button['text'])
+				# Is it a composite/macro action?
+				if 'tags' in action.keys():
+					logger.debug("Macro action")
 					
-				for b in buttons:
-					logger.debug("Calling %s.%s with %s [%s]" % (b['remote'], b['socket'], action['action'], b['text']))
+					# Find all of the devices/buttons (except the current one) with this tag
+					buttons = []
+					for t in action['tags']:
+						buttons += getButtonsForTag(tag = t, exclude = button['text'])
+						
+					for b in buttons:
+						logger.debug("Calling %s.%s with %s [%s]" % (b['remote'], b['socket'], action['action'], b['text']))
+						
+						# Create device and send signal
+						if energenie:
+							for d in energenie['buttons']:
+								if (d['remote'] == b['remote']) and (d['socket'] == b['socket']):
+									if action['action'] == "ON":
+										d.turn_on()
+									if action['action'] == "OFF":
+										d.turn_off()
+				else:
+					# Single fire action, just call with remote id and socket id
+					logger.debug("Single fire action")
+					logger.debug("Calling %s.%s with %s" % (action['remote'], action['socket'], action['action']))
 					
 					# Create device and send signal
 					if energenie:
 						for d in energenie['buttons']:
-							if (d['remote'] == b['remote']) and (d['socket'] == b['socket']):
+							if (d['remote'] == action['remote']) and (d['socket'] == action['socket']):
 								if action['action'] == "ON":
 									d.turn_on()
 								if action['action'] == "OFF":
 									d.turn_off()
+		else:
+			# No power entries defined, just send a power signal to the defined remote and socket
+			logger.warn("No %s action entries defined - using default remote and socket" % action_type)
+			sent = False
+			for d in energenie['buttons']:
+				if (d['remote'] == button['remote']) and (d['socket'] == button['socket']) and (d['text'] == button['text']):
+					if state == "ON":
+						d['device'].turn_on()
+						sent = True
+					if state == "OFF":
+						d['device'].turn_off()
+						sent = True
+			if sent:
+				logger.debug("Sent signal to %s.%s" % (str(hex(d['remote'])), d['socket']))
 			else:
-				# Single fire action, just call with remote id and socket id
-				logger.debug("Single fire action")
-				logger.debug("Calling %s.%s with %s" % (action['remote'], action['socket'], action['action']))
-				
-				# Create device and send signal
-				if energenie:
-					for d in energenie['buttons']:
-						if (d['remote'] == action['remote']) and (d['socket'] == action['socket']):
-							if action['action'] == "ON":
-								d.turn_on()
-							if action['action'] == "OFF":
-								d.turn_off()
+				logger.warn("Signal not sent to %s.%s" % (str(hex(button['remote'])), button['socket']))
 	else:
 		logger.warn("No %s action defined" % action_type)
 	

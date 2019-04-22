@@ -17,11 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import random
 import os
 import sys
 import time
 import timeit
 import ctypes
+from types import SimpleNamespace
 
 # Locals
 from lib import config
@@ -38,9 +40,11 @@ from lib.render import renderPage, renderStatus, renderConfirmWindow, renderPowe
 logger = newlog(__file__)
 
 # Energenie
+elib = False
 try:
 	import energenie as elib
 except Exception as e:
+	logger.error(e)
 	logger.fatal("")
 	logger.fatal("========================= WARNING! =============================")
 	logger.fatal("You must have the pyenergenie library installed and configured")
@@ -50,17 +54,37 @@ except Exception as e:
 	logger.fatal("your GPIO settings and then rebuild the driver with 'build_rpi'.")
 	logger.fatal("================================================================")
 	logger.fatal("")
-	elib = False
+elib = False
+
+class dummyDevice():
+	""" Dummy Energenie device """
+
+	def __init__(self):
+		""" Dummy init """
+		pass
+
+	def get_readings(self):
+		""" Dummy sensor readings """
+		
+		readings = {
+			'voltage'			: random.uniform(230.0, 241.9),
+			'frequency'			: random.uniform(48.2, 52.7),
+			'current'			: random.uniform(0.2, 13.0),
+			'apparent_power'	: random.uniform(0.0, 300),
+			'reactive_power'	: random.uniform(0.0, 300),
+			'real_power'		: random.uniform(0.0, 300),
+		}
+		d = SimpleNamespace(**readings)
+		return d
 
 def sdlRFController():
 	
+	# SDL only listens for these types of input, all others are ignored
 	sdl_detected_events = [SDL_KEYDOWN, SDL_MOUSEBUTTONDOWN, SDL_FINGERDOWN, SDL_FINGERMOTION, SDL_QUIT]
 	
 	# Defaults for first page shown
 	running = True
-	# Default transition effect
 	transition = None
-	# Initial page
 	page = 1
 	
 	logger.info("Starting...")
@@ -100,26 +124,36 @@ def sdlRFController():
 	energenie_buttons = []
 	energenie_monitors = []
 	if elib:
-		
 		elib.init()
 		# Load all energenie sockets
 		for b in getAllButtons():
-			d = energenie.Devices.ENER002((b['remote'], b['socket']))
-			energenie_buttons.append(d)
-			logger.info("Adding device %s.%s" % (b['remote'], b['socket']))
+			b['device'] = elib.Devices.ENER002((b['remote'], b['socket']))
+			energenie_buttons.append(b)
+			logger.debug("Adding device %s.%s" % (str(hex(b['remote'])), b['socket']))
 			
 		# Load all energenie power monitor devices
 		for k in config.POWER_MONITORS:
-			d = energenie.Devices.MIHO004(deviceid = config.POWER_MONITORS[k]['deviceid'])
+			d = elib.Devices.MIHO004(device_id = config.POWER_MONITORS[k]['deviceid'])
 			energenie_monitors.append(d)
-			logger.info("Adding monitor %s.%s" % (b['remote'], b['socket']))
+			logger.debug("Adding monitor %s" % (str(hex(config.POWER_MONITORS[k]['deviceid']))))
+			
+		logger.info("Added %s Energenie power socket devices" % len(energenie_buttons))
+		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))
 	else:
-		logger.warning("Energenie radio functions not available")
+		logger.warn("Energenie radio functions not available")
+		# Add some dummy energy monitoring devices
+		dd1 = dummyDevice()
+		dd2 = dummyDevice()
+		dd3 = dummyDevice()
+		energenie_monitors.append(dd1)
+		energenie_monitors.append(dd2)
+		energenie_monitors.append(dd3)
+		energenie_monitors.append(dd2)
 		
 	energenie = {
 		'lib' : elib,
 		'buttons' : energenie_buttons,
-		'monitor' : energenie_monitors,
+		'monitors' : energenie_monitors,
 	}		
 	
 	# Show page 1
@@ -142,12 +176,13 @@ def sdlRFController():
 	clicked = False
 	redraw = True
 	loop_count = 0
+	old_button = {'name' : None}
+	old_time = time.time()
+	last_ts = time.time()
+	graph_mode = None
 		
 	# Open up the radio device
 	radio = None
-	
-	# Power data from any connected power socket monitor stations
-	power_data = {}
 		
 	# Event handler
 	while running:
@@ -163,7 +198,7 @@ def sdlRFController():
 		
 		# Read any broadcast power events and update data
 		if energenie['lib']:
-			energenie.loop()
+			energenie['lib'].loop()
 			for d in energenie['monitors']:
 				try:
 					pwr = d.get_power()
@@ -179,7 +214,7 @@ def sdlRFController():
 			while not ts.queue_empty():
 				for e in ts.get_event():
 					ts_event = e
-					logger.info("Touch event [%s]" % ts_event)
+					logger.debug("Touch event [%s]" % ts_event)
 					# Map x and y coordinates
 					if 'y' in ts_event.keys():
 						if config.TOUCH['axis_reversed']:
@@ -247,6 +282,12 @@ def sdlRFController():
 					
 				# Linux evdev touchscreen
 				if (ts_event):
+					ts_interval = (ts_event['time'] - last_ts)
+					if ts_interval < config.BUTTON_BOUNCE_TIME:
+						logger.debug("Ignoring touchscreen input [%.2fs]" % ts_interval)
+						ts_event = False
+						break
+					
 					window.touchRead(ts_event)
 					button = window.boxPressed()
 					if button:
@@ -254,6 +295,25 @@ def sdlRFController():
 					else:
 						clicked = False
 					logger.debug("Touchscreen input [box:%s]" % clicked)
+					
+					# Debounce check - only allow multiple clicks to the
+					# same button after a minimum time delay, to reduce 
+					# button bouncing.
+					if (button) and ('name' in button.keys()):
+						if (old_button) and ('name' in old_button.keys()):
+							if button['name'] == old_button['name']:
+								double_click_time = time.time() - old_time
+								if double_click_time < config.BUTTON_BOUNCE_TIME:
+									# Break from loop and do no further processing of this button click
+									logger.debug("Ignoring touchscreen input - possible button bounce [%.2fs < %ss]" % (double_click_time, config.BUTTON_BOUNCE_TIME))
+									ts_event = False
+									break
+								else:
+									logger.debug("Accepting touchscreen input - long double click [%.2fs]" % double_click_time)
+							
+					old_button = button
+					old_time = time.time()
+					last_ts = ts_event['time']
 					
 				#############################################################
 				#
@@ -267,7 +327,7 @@ def sdlRFController():
 					renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 					
 					# Run the device RF power command
-					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], button['remote'], button['socket']))
+					logger.info("Calling radio functions for button [%s:%s:%s remote:%s socket:%s]" % (page, button['align'], button['number'], str(hex(button['remote'])), button['socket']))
 					setButtonPower(energenie = energenie, button = button, state = power_mode)
 					redraw = False
 				
@@ -307,7 +367,7 @@ def sdlRFController():
 					button = window.boxPressedByName(name = "btn_config")		
 					if (screen != "status"):
 						# Draw status screen
-						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
+						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen, energenie = energenie, graph_mode = graph_mode)
 						renderStatus(window, button_clicked = button, flash = False, power_mode = power_mode)
 						screen = "status"
 						redraw = True
@@ -323,7 +383,7 @@ def sdlRFController():
 					if (screen != "monitor"):
 						# Flash the button to indicate click and change to the power monitor screen
 						renderFlash(window, page = page, button_clicked = button, power_mode = power_mode, screen = screen)
-						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, power_data = power_data)
+						renderPowerMon(window, page = page, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie, graph_mode = graph_mode)
 						screen = "monitor"
 						redraw = True
 					else:
@@ -331,6 +391,11 @@ def sdlRFController():
 						renderPage(window, page = page, button_clicked = button, flash = True, power_mode = power_mode)
 						screen = "page"
 						redraw = True
+				
+				# Toggle the type of information shown in the power monitor screen - text numbers or scrolling chart, etc
+				if (screen == "monitor") and (clicked in ["btn_graph", "btn_graph_numbers"]):
+					graph_mode = clicked
+					redraw = True
 				
 				# If we pressed the keyboard Q/q key, exit from the running application
 				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_q)):
@@ -361,6 +426,8 @@ def sdlRFController():
 				# End of all user-defined actions
 				#
 				#########################################
+				
+				ts_event = False
 			
 		######################################################
 		#
@@ -383,7 +450,7 @@ def sdlRFController():
 			# Re-render the power monitor page
 			if screen == "monitor":
 				# This redraws continuously
-				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode)
+				renderPowerMon(window, button_clicked = button, flash = False, power_mode = power_mode, energenie = energenie, graph_mode = graph_mode)
 			
 			# Flush updated screen buffer to display
 			window.update(transition = transition)

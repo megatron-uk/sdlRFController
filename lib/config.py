@@ -8,7 +8,7 @@ REFRESH_TIME = 0.05
 CACHE_CLEAR_TIME = 10
 
 # Enable more verbose output
-DEBUG = 1
+DEBUG = 0
 INFO = 1
 
 # Screen size
@@ -61,6 +61,12 @@ ASSETS = {
         'btn_confirm'	: ASSETS_FOLDER + 'btn_confirm.bmp',
         'btn_cancel'	: ASSETS_FOLDER + 'btn_cancel.bmp',
         'btn_meter'		: ASSETS_FOLDER + 'btn_meter.bmp',
+        'btn_graph'		: ASSETS_FOLDER + 'btn_graph.bmp',
+        'btn_graph_numbers'	: ASSETS_FOLDER + 'btn_graph_numbers.bmp',
+        'btn_graph_volts'	: ASSETS_FOLDER + 'btn_graph_volts.bmp',
+        'btn_graph_watt'	: ASSETS_FOLDER + 'btn_graph_watt.bmp',
+        'btn_graph_hz'		: ASSETS_FOLDER + 'btn_graph_hz.bmp',
+        'btn_graph_amp'		: ASSETS_FOLDER + 'btn_graph_amp.bmp',
 }
 
 # Font files
@@ -71,6 +77,10 @@ FONT_NORMAL_PT = 28
 FONT_BUTTON = ASSETS_FOLDER + "verdanab.ttf"
 FONT_BUTTON_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
 FONT_BUTTON_PT = 28
+
+FONT_MONITOR = ASSETS_FOLDER + "verdanab.ttf"
+FONT_MONITOR_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
+FONT_MONITOR_PT = 20
 
 FONT_INFO = ASSETS_FOLDER + "verdana.ttf"
 FONT_INFO_COLOUR = { 'r' : 255, 'g': 255, 'b': 255}
@@ -90,6 +100,9 @@ BUTTON_HEIGHT = 60
 
 # How long a button flashes
 BUTTON_FLASH_DELAY = 0.2
+
+# How long between presses a button will respond to touchscreen
+BUTTON_BOUNCE_TIME = 0.7
 
 # A structure defining which buttons should be on which pages
 SCREENS = {
@@ -244,7 +257,7 @@ SCREENS = {
 					'image'	: "btn_xbox360.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'remote'	: 0x7bbff,
 					'socket'	: 1,
 					'tags'	: [],
 				},

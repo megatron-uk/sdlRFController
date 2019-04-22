@@ -37,7 +37,7 @@ from sdl2 import *
 # Set up a logger for this file
 logger = newlog(__file__)
 
-def renderFlash(window = None, page = None, button_clicked = None, power_mode = "ON", screen = None):
+def renderFlash(window = None, page = None, button_clicked = None, power_mode = "ON", screen = None, energenie = None, graph_mode = None):
 	""" Flash a button on a page """
 	
 	if screen == "page":
@@ -45,7 +45,7 @@ def renderFlash(window = None, page = None, button_clicked = None, power_mode = 
 	if screen == "status":
 		renderStatus(window, button_clicked = button_clicked, flash = True, power_mode = power_mode)
 	if screen == "monitor":
-		renderPowerMon(window, page = page, button_clicked = button_clicked, flash = True, power_mode = power_mode)
+		renderPowerMon(window, page = page, button_clicked = button_clicked, flash = True, power_mode = power_mode, energenie = energenie, graph_mode = graph_mode)
 	window.update()
 	
 	return True
@@ -102,20 +102,7 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['y1'] = y_pos
 	button['y2'] = y_pos + btn_meter.contents.h
 	window.boxes.append(button)
-	
-	# Splat the power mode buttons at the bottom
-	x_pos = x_pos + btn_back.contents.w + x_spacing # previous button, plus an offset
-	y_pos = config.SCREEN_H - btn_power.contents.h
-	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
-	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
-	button = {}
-	button['name'] = "btn_power"
-	button['image'] =  btn_power_image
-	button['x1'] = x_pos
-	button['x2'] = x_pos + btn_power.contents.w
-	button['y1'] = y_pos
-	button['y2'] = y_pos + btn_power.contents.h
-	window.boxes.append(button)
+
 	
 	# Splat the config/status buttons at the bottom
 	x_pos = x_pos + btn_power.contents.w + x_spacing # previous button, plus an offset
@@ -129,6 +116,20 @@ def renderButtonBar(window = None, button_clicked = None, flash = False, power_m
 	button['x2'] = x_pos + btn_config.contents.w
 	button['y1'] = y_pos
 	button['y2'] = y_pos + btn_config.contents.h
+	window.boxes.append(button)
+	
+		# Splat the power mode buttons at the bottom
+	x_pos = x_pos + btn_back.contents.w + x_spacing # previous button, plus an offset
+	y_pos = config.SCREEN_H - btn_power.contents.h
+	pow_rect = SDL_Rect(x_pos, y_pos, btn_power.contents.w, btn_power.contents.h)
+	SDL_BlitSurface(btn_power, None, window.backbuffer, pow_rect)
+	button = {}
+	button['name'] = "btn_power"
+	button['image'] =  btn_power_image
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_power.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_power.contents.h
 	window.boxes.append(button)
 	
 	# Splat the restart buttons at the bottom
@@ -195,11 +196,21 @@ def renderConfirmWindow(window = None, header = None, text = None):
 		amask = 0xff000000
 	
 	# Create a surface with the alpha channel set
-	overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, 32 , rmask , gmask , bmask , amask )
-	g.regS(overlay_surface)
-	overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
-	SDL_FillRect(overlay_surface, None , 0xBB0F0F0F) # ARGB format
-	SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
+	driver_name = SDL_GetCurrentVideoDriver()
+	if bytes.decode(driver_name) != "RPI":
+		logger.debug("Using transparency overlay")
+		overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, 32 , rmask , gmask , bmask , amask )
+		g.regS(overlay_surface)
+		overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
+		SDL_FillRect(overlay_surface, None , 0xBB0F0F0F) # ARGB format
+		SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
+	else:
+		logger.debug("Not using transparency with RPI driver")
+		overlay_surface = SDL_CreateRGBSurface(0, config.SCREEN_POPUP_W , config.SCREEN_POPUP_H, config.SCREEN_BPP , 0 , 0 , 0 , 255 )
+		g.regS(overlay_surface)
+		overlay_rect = SDL_Rect(config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, overlay_surface.contents.w, overlay_surface.contents.h)
+		SDL_FillRect(overlay_surface, None , 0x00000000) # ARGB format
+		SDL_BlitSurface(overlay_surface, None, window.backbuffer, overlay_rect)
 
 	# Print the header in reverse text in the overlay box
 	if header is not None:
@@ -257,14 +268,16 @@ def renderConfirmWindow(window = None, header = None, text = None):
 	window.boxes.append(button)
 	
 	window.update()
+	time.sleep(0.1)
 	
-	# Redraw on the existing renderer
-	SDL_SetRenderDrawColor(window.renderer, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'], SDL_ALPHA_OPAQUE)
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y);
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
-	SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
-	window.update(reuse_texture = True)
+	if bytes.decode(driver_name) != "RPI":
+		# Redraw on the existing renderer
+		SDL_SetRenderDrawColor(window.renderer, config.HIGHLIGHT_COLOUR['r'], config.HIGHLIGHT_COLOUR['g'], config.HIGHLIGHT_COLOUR['b'], SDL_ALPHA_OPAQUE)
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y);
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+		SDL_RenderDrawLine(window.renderer, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y, config.SCREEN_POPUP_X + config.SCREEN_POPUP_W, config.SCREEN_POPUP_Y + config.SCREEN_POPUP_H);
+		window.update(reuse_texture = True)
 	
 	g.cleanUp()
 
@@ -367,7 +380,7 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 	
 	# CPU load
-	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (0.25))) 
+	text_cpu = "CPU Load: %3s%%" % int(psutil.cpu_percent(interval = (0.5))) 
 	y_pos = y_pos + text_surface.contents.h + 5
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
 	text_surface = TTF_RenderText_Blended(font, str.encode(text_cpu), font_colour)
@@ -517,12 +530,11 @@ def renderPage(window = None, page = 1, button_clicked = None, flash = False, po
 		
 	# 3.
 	window.update()
-
 	g.cleanUp()
 	
 	return page
 	
-def renderPowerMon(window = None, page = 1, button_clicked = None, flash = False, power_mode = "ON", power_data = None):
+def renderPowerMon(window = None, page = 1, button_clicked = None, flash = False, power_mode = "ON", energenie = None, graph_mode = None):
 	""" Display a page of power consumption figures """
 	
 	logger.debug("Loading power monitor %s" % page)
@@ -530,8 +542,232 @@ def renderPowerMon(window = None, page = 1, button_clicked = None, flash = False
 	g = GarbageCleaner()
 	window.clear()
 
+	# Add the standard button bar
 	renderButtonBar(window = window, button_clicked = button_clicked, flash = flash, power_mode = power_mode)
 
+	# Add the graph option button bar
+	btn_graph = gfxLoadBMP(window, config.ASSETS['btn_graph'])
+	btn_graph_numbers = gfxLoadBMP(window, config.ASSETS['btn_graph_numbers'])
+	btn_graph_watt = gfxLoadBMP(window, config.ASSETS['btn_graph_watt'])
+	btn_graph_hz = gfxLoadBMP(window, config.ASSETS['btn_graph_hz'])
+	btn_graph_volts = gfxLoadBMP(window, config.ASSETS['btn_graph_volts'])
+	btn_graph_amp = gfxLoadBMP(window, config.ASSETS['btn_graph_amp'])
+
+	# Place the graph option buttons above the main button bar at the bottom
+	x_spacing = 5
+	x_pos = x_spacing
+	y_pos = config.SCREEN_H - (2 * btn_graph_numbers.contents.h) - 2
+	graph_rect = SDL_Rect(x_pos, y_pos, btn_graph_numbers.contents.w, btn_graph_numbers.contents.h)
+	SDL_BlitSurface(btn_graph_numbers, None, window.backbuffer, graph_rect)
+	# Register nav buttons as available on the page for clicks
+	button = {}
+	button['name'] = "btn_graph_numbers"
+	button['image'] =  config.ASSETS['btn_graph_numbers']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_graph_numbers.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_graph_numbers.contents.h
+	window.boxes.append(button)
+
+	x_pos = x_pos + btn_graph_numbers.contents.w + x_spacing # previous button, plus an offset
+	meter_rect = SDL_Rect(x_pos, y_pos, btn_graph.contents.w, btn_graph.contents.h)
+	SDL_BlitSurface(btn_graph, None, window.backbuffer, meter_rect)
+	button = {}
+	button['name'] = "btn_graph"
+	button['image'] =  config.ASSETS['btn_graph']
+	button['x1'] = x_pos
+	button['x2'] = x_pos + btn_graph.contents.w
+	button['y1'] = y_pos
+	button['y2'] = y_pos + btn_graph.contents.h
+	window.boxes.append(button)
+
+	# Load graph buttons if in graph mode
+	if graph_mode in ["btn_graph"]:
+		x_pos = x_pos + btn_graph.contents.w + x_spacing # previous button, plus an offset
+		meter_rect = SDL_Rect(x_pos, y_pos, btn_graph_volts.contents.w, btn_graph_volts.contents.h)
+		SDL_BlitSurface(btn_graph_volts, None, window.backbuffer, meter_rect)
+		button = {}
+		button['name'] = "btn_graph_volts"
+		button['image'] =  config.ASSETS['btn_graph_volts']
+		button['x1'] = x_pos
+		button['x2'] = x_pos + btn_graph_volts.contents.w
+		button['y1'] = y_pos
+		button['y2'] = y_pos + btn_graph_volts.contents.h
+		window.boxes.append(button)
+		
+		x_pos = x_pos + btn_graph_numbers.contents.w + x_spacing # previous button, plus an offset
+		meter_rect = SDL_Rect(x_pos, y_pos, btn_graph_hz.contents.w, btn_graph_hz.contents.h)
+		SDL_BlitSurface(btn_graph_hz, None, window.backbuffer, meter_rect)
+		button = {}
+		button['name'] = "btn_graph_hz"
+		button['image'] =  config.ASSETS['btn_graph_hz']
+		button['x1'] = x_pos
+		button['x2'] = x_pos + btn_graph_hz.contents.w
+		button['y1'] = y_pos
+		button['y2'] = y_pos + btn_graph_hz.contents.h
+		window.boxes.append(button)
+		
+		x_pos = x_pos + btn_graph_hz.contents.w + x_spacing # previous button, plus an offset
+		meter_rect = SDL_Rect(x_pos, y_pos, btn_graph_amp.contents.w, btn_graph_amp.contents.h)
+		SDL_BlitSurface(btn_graph_amp, None, window.backbuffer, meter_rect)
+		button = {}
+		button['name'] = "btn_graph_amp"
+		button['image'] =  config.ASSETS['btn_graph_amp']
+		button['x1'] = x_pos
+		button['x2'] = x_pos + btn_graph_amp.contents.w
+		button['y1'] = y_pos
+		button['y2'] = y_pos + btn_graph_amp.contents.h
+		window.boxes.append(button)
+		
+		x_pos = x_pos + btn_graph_amp.contents.w + x_spacing # previous button, plus an offset
+		meter_rect = SDL_Rect(x_pos, y_pos, btn_graph_watt.contents.w, btn_graph_watt.contents.h)
+		SDL_BlitSurface(btn_graph_watt, None, window.backbuffer, meter_rect)
+		button = {}
+		button['name'] = "btn_graph_watt"
+		button['image'] =  config.ASSETS['btn_graph_watt']
+		button['x1'] = x_pos
+		button['x2'] = x_pos + btn_graph_watt.contents.w
+		button['y1'] = y_pos
+		button['y2'] = y_pos + btn_graph_watt.contents.h
+		window.boxes.append(button)
+
+	# Load font
+	font = gfxGetFont(window, config.FONT_MONITOR, config.FONT_MONITOR_PT)
+	font_s = gfxGetFont(window, config.FONT_INFO, config.FONT_INFO_PT)
+	font_colour = pixels.SDL_Color(config.FONT_MONITOR_COLOUR['r'], config.FONT_MONITOR_COLOUR['g'], config.FONT_MONITOR_COLOUR['b'])
+
+	if graph_mode in [None, "btn_graph_numbers"]:
+
+		#######################################
+		#
+		# Row for each sensor metric
+		#
+		#######################################
+	
+		col_width = int((config.SCREEN_W - 5)/ 5)
+		y_start = 25
+		y = y_start
+		x_col0 = 5
+		x_col1 = x_col0 + col_width + 5
+	
+		# voltage
+		text_sensor_surface = gfxGetText(window, font_s, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "Voltage")
+		text_rect = SDL_Rect(x_col0, y, text_sensor_surface.contents.w, text_sensor_surface.contents.h)
+		SDL_BlitSurface(text_sensor_surface, None, window.backbuffer, text_rect)
+		if (x_col0 + text_sensor_surface.contents.w) > x_col1:
+			x_col1 = (x_col0 + text_sensor_surface.contents.w)
+		
+		# frequency
+		y = y + text_sensor_surface.contents.h + 5
+		text_sensor_surface = gfxGetText(window, font_s, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "Hz")
+		text_rect = SDL_Rect(x_col0, y, text_sensor_surface.contents.w, text_sensor_surface.contents.h)
+		SDL_BlitSurface(text_sensor_surface, None, window.backbuffer, text_rect)
+		if (x_col0 + text_sensor_surface.contents.w) > x_col1:
+			x_col1 = (x_col0 + text_sensor_surface.contents.w)
+			
+		# current
+		y = y + text_sensor_surface.contents.h + 5
+		text_sensor_surface = gfxGetText(window, font_s, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "Amps")
+		text_rect = SDL_Rect(x_col0, y, text_sensor_surface.contents.w, text_sensor_surface.contents.h)
+		SDL_BlitSurface(text_sensor_surface, None, window.backbuffer, text_rect)
+		if (x_col0 + text_sensor_surface.contents.w) > x_col1:
+			x_col1 = (x_col0 + text_sensor_surface.contents.w)
+			
+		# apparent_power
+		y = y + text_sensor_surface.contents.h + 5
+		text_sensor_surface = gfxGetText(window, font_s, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "Apparent")
+		text_rect = SDL_Rect(x_col0, y, text_sensor_surface.contents.w, text_sensor_surface.contents.h)
+		SDL_BlitSurface(text_sensor_surface, None, window.backbuffer, text_rect)
+		if (x_col0 + text_sensor_surface.contents.w) > x_col1:
+			x_col1 = (x_col0 + text_sensor_surface.contents.w)
+			
+		# reactive_power
+		y = y + text_sensor_surface.contents.h + 5
+		text_sensor_surface = gfxGetText(window, font_s, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "Reactive")
+		text_rect = SDL_Rect(x_col0, y, text_sensor_surface.contents.w, text_sensor_surface.contents.h)
+		SDL_BlitSurface(text_sensor_surface, None, window.backbuffer, text_rect)
+		if (x_col0 + text_sensor_surface.contents.w) > x_col1:
+			x_col1 = (x_col0 + text_sensor_surface.contents.w)
+			
+		# real_power
+		y = y + text_sensor_surface.contents.h + 5
+		text_sensor_surface = gfxGetText(window, font_s, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "Real")
+		text_rect = SDL_Rect(x_col0, y, text_sensor_surface.contents.w, text_sensor_surface.contents.h)
+		SDL_BlitSurface(text_sensor_surface, None, window.backbuffer, text_rect)
+		if (x_col0 + text_sensor_surface.contents.w) > x_col1:
+			x_col1 = (x_col0 + text_sensor_surface.contents.w)
+		
+		###############################################
+		#
+		# Headers for each column of sensor monitor device
+		#
+		###############################################
+		
+		col_width = int((config.SCREEN_W - x_col1) / 4)
+		x_col2 = x_col1 + col_width
+		x_col3 = x_col2 + col_width
+		x_col4 = x_col3 + col_width
+		logger.debug("Column 1 starts at %s" % x_col1)
+		y = 5
+		text_surface = gfxGetText(window, font, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "A")
+		text_rect = SDL_Rect(x_col1, y, text_surface.contents.w, text_surface.contents.h)
+		SDL_BlitSurface(text_surface, None, window.backbuffer, text_rect)
+		
+		logger.debug("Column 2 starts at %s" % x_col2)
+		y = 5
+		text_surface = gfxGetText(window, font, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "B")
+		text_rect = SDL_Rect(x_col2, y, text_surface.contents.w, text_surface.contents.h)
+		SDL_BlitSurface(text_surface, None, window.backbuffer, text_rect)
+	
+		logger.debug("Column 3 starts at %s" % x_col3)
+		y = 5
+		text_surface = gfxGetText(window, font, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "C")
+		text_rect = SDL_Rect(x_col3, y, text_surface.contents.w, text_surface.contents.h)
+		SDL_BlitSurface(text_surface, None, window.backbuffer, text_rect)
+	
+		logger.debug("Column 4 starts at %s" % x_col4)
+		y = 5
+		text_surface = gfxGetText(window, font, config.FONT_MONITOR_PT, font_colour, config.FONT_MONITOR_COLOUR, "D")
+		text_rect = SDL_Rect(x_col4, y, text_surface.contents.w, text_surface.contents.h)
+		SDL_BlitSurface(text_surface, None, window.backbuffer, text_rect)
+		
+		##########################################
+		#
+		# Rows of sensor values for each column 
+		# of sensor monitor device
+		#
+		##########################################
+		
+		x_col = x_col1
+		for power_monitor in energenie['monitors']:
+			
+			power = power_monitor.get_readings()
+			voltage = "%3.0fv" % power.voltage
+			frequency = "%2.1fHz" % power.frequency
+			current = "%3.1fa" % power.current
+			apparent_power = "%3.0fw" % power.apparent_power
+			reactive_power = "%3.0fw" % power.reactive_power
+			real_power = "%3.0fw" % power.real_power
+			
+			y = y_start
+			
+			for sensor in [voltage, frequency, current, apparent_power, reactive_power, real_power]:
+			
+				text_value_surface = TTF_RenderText_Blended(font_s, str.encode(str(sensor)), font_colour)
+				g.regS(text_value_surface)
+				text_value_rect = SDL_Rect(x_col, y, text_value_surface.contents.w, text_value_surface.contents.h)
+				SDL_BlitSurface(text_value_surface, None, window.backbuffer, text_value_rect)
+				
+				y = y + text_sensor_surface.contents.h + 5
+	
+			x_col += col_width
+			
+	#elif graph is "":
+	#	pass
+
+	window.update()
 	g.cleanUp()
 	
-	return page
+	time.sleep(0.25)
+	
+	return True
