@@ -42,19 +42,19 @@ logger = newlog(__file__)
 # Energenie
 elib = False
 try:
-	import energenie as elib
+    import energenie as elib
 except Exception as e:
-	logger.error(e)
-	logger.fatal("")
-	logger.fatal("========================= WARNING! =============================")
-	logger.fatal("You must have the pyenergenie library installed and configured")
-	logger.fatal("to use this application fully.")
-	logger.fatal("")
-	logger.fatal("Make sure you edit 'pyenergenie/src/energenie/drv/spis.c' with")
-	logger.fatal("your GPIO settings and then rebuild the driver with 'build_rpi'.")
-	logger.fatal("================================================================")
-	logger.fatal("")
-elib = False
+    logger.error(e)
+    logger.fatal("")
+    logger.fatal("========================= WARNING! =============================")
+    logger.fatal("You must have the pyenergenie library installed and configured")
+    logger.fatal("to use this application fully.")
+    logger.fatal("")
+    logger.fatal("Make sure you edit 'pyenergenie/src/energenie/drv/spis.c' with")
+    logger.fatal("your GPIO settings and then rebuild the driver with 'build_rpi'.")
+    logger.fatal("================================================================")
+    logger.fatal("")
+    elib = False
 
 class dummyDevice():
 	""" Dummy Energenie device """
@@ -133,9 +133,10 @@ def sdlRFController():
 			
 		# Load all energenie power monitor devices
 		for k in config.POWER_MONITORS:
-			d = elib.Devices.MIHO004(device_id = config.POWER_MONITORS[k]['deviceid'])
+			d = elib.registry.get(config.POWER_MONITORS[k]['deviceid'])
+			#d = elib.Devices.MIHO004(device_id = config.POWER_MONITORS[k]['deviceid'])
 			energenie_monitors.append(d)
-			logger.debug("Adding monitor %s" % (str(hex(config.POWER_MONITORS[k]['deviceid']))))
+			logger.debug("Adding monitor %s" % (config.POWER_MONITORS[k]['text']))
 			
 		logger.info("Added %s Energenie power socket devices" % len(energenie_buttons))
 		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))

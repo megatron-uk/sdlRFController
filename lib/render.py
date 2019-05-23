@@ -742,12 +742,28 @@ def renderPowerMon(window = None, page = 1, button_clicked = None, flash = False
 		for power_monitor in energenie['monitors']:
 			
 			power = power_monitor.get_readings()
-			voltage = "%3.0fv" % power.voltage
-			frequency = "%2.1fHz" % power.frequency
-			current = "%3.1fa" % power.current
-			apparent_power = "%3.0fw" % power.apparent_power
-			reactive_power = "%3.0fw" % power.reactive_power
-			real_power = "%3.0fw" % power.real_power
+			if power.voltage != None:
+				voltage = "%sv" % power.voltage
+			else:
+				voltage = "n/a"
+				
+			if power.frequency != None:
+				frequency = "%2.1fHz" % power.frequency
+			else:
+				frequency = "n/a"
+				
+			current = "0" #% power.current
+			apparent_power = "0" #% power.apparent_power
+			
+			if power.reactive_power != None:
+				reactive_power = "%3.0fw" % power.reactive_power
+			else:
+				reactive_power = "n/a"
+			
+			if power.real_power != None:
+				real_power = "%3.0fw" % power.real_power
+			else:
+				real_power = "n/a" #% power.real_power
 			
 			y = y_start
 			

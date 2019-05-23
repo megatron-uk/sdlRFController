@@ -147,8 +147,8 @@ SCREENS = {
 					'image'	: None,
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA0008,
+					'socket'	: 2,
 					'tags'	: ["speakers"],
 				},
 			},
@@ -158,8 +158,8 @@ SCREENS = {
 					'image'	: "btn_dreamcast.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA0008,
+					'socket'	: 4,
 					'tags'	: [],
 				},
 				2 : {
@@ -176,8 +176,8 @@ SCREENS = {
 					'image'	: "btn_sms.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA000A,
+					'socket'	: 2,
 					'tags'	: [],
 				},
 				4 : {
@@ -185,8 +185,8 @@ SCREENS = {
 					'image'	: "btn_megadrive.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA000A,
+					'socket'	: 4,
 					'tags'	: [],
 				},
 			},
@@ -210,8 +210,8 @@ SCREENS = {
 					'image'	: "btn_playstation2.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA0007,
+					'socket'	: 4,
 					'tags'	: [],
 				},
 				3 : {
@@ -219,8 +219,8 @@ SCREENS = {
 					'image'	: "btn_playstation3.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA0007,
+					'socket'	: 2,
 					'tags'	: [],
 				},
 				4 : {
@@ -228,8 +228,8 @@ SCREENS = {
 					'image'	: "btn_playstation4.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA0007,
+					'socket'	: 3,
 					'tags'	: [],
 				},
 			},
@@ -239,8 +239,8 @@ SCREENS = {
 					'image'	: "btn_playstationtv.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA0009,
+					'socket'	: 2,
 					'tags'	: [],
 				},
 				2 : {
@@ -248,7 +248,7 @@ SCREENS = {
 					'image'	: "btn_xbox.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'remote'	: 0xA0007,
 					'socket'	: 1,
 					'tags'	: [],
 				},
@@ -257,8 +257,8 @@ SCREENS = {
 					'image'	: "btn_xbox360.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x7bbff,
-					'socket'	: 1,
+					'remote'	: 0xA0008,
+					'socket'	: 3,
 					'tags'	: [],
 				},
 			},
@@ -273,8 +273,8 @@ SCREENS = {
 					'image'	: "btn_pcengine.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
+					'remote'	: 0xA000A,
+					'socket'	: 3,
 					'tags'	: [],
 				},
 				2 : {
@@ -381,7 +381,7 @@ SCREENS = {
 					'image'	: "btn_snes.bmp",
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'remote'	: 0xA000A,
 					'socket'	: 1,
 					'tags'	: [],
 				},
@@ -392,7 +392,7 @@ SCREENS = {
 					'image'	: None,
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'remote'	: 0xA0009,
 					'socket'	: 1,
 					'tags'	: [],
 				},
@@ -410,7 +410,7 @@ SCREENS = {
 					'image'	: None,
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'remote'	: 0xA0005,
 					'socket'	: 1,
 					'tags'	: ["speakers"],
 				},
@@ -426,19 +426,49 @@ SCREENS = {
 			},
 		},
 	},
+        5 : {
+                'BUTTON' : {
+                            'L' : {
+                                1 : {
+                                        'text' : "Monitor",
+                                        'image': None,
+                                        'poweron'   : [],
+                                        'poweroff'  : [],
+                                        'remote'    : 0xA0005,
+                                        'socket'    : 2,
+                                        'tags'  : [],
+                                },
+
+                        },
+                            'R' : {
+
+                        }
+                }
+        },
 }
 
 # A list of any power monitor devices (MIHO004) that we can listen for
 # broadcast signals from, to get the current power draw. This data can
 # be viewed on the power monitor screen ('p' on the keyboard, or the 
 # 'meter/gauge' button).
+#
+# NOte that we use the string based name in the energenie registry.kvs file
+# as the device name...
 POWER_MONITORS = {
 	1 : {
 		'text' 		: "Wall socket 1",
-		'deviceid'	: 0x00000,
+		'deviceid'	: 'mon1',
 	},
 	2 : {
 		'text' 		: "Wall socket 2",
-		'deviceid'	: 0x00000,
+		'deviceid'	: 'mon2',
+	},
+	3 : {
+		'text' 		: "Wall socket 3",
+		'deviceid'	: 'mon3',
+	},
+	4 : {
+		'text' 		: "Wall socket 4",
+		'deviceid'	: 'mon4',
 	},
 }
