@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
+
 from lib import config
 from lib.newlog import newlog
 
@@ -111,9 +113,13 @@ def setButtonPower(energenie = None, button = None, state = "ON"):
 							for d in energenie['buttons']:
 								if (d['remote'] == b['remote']) and (d['socket'] == b['socket']):
 									if action['action'] == "ON":
-										d.turn_on()
+										for i in range(0,2):
+											d['device'].turn_on()
+											time.sleep(0.1)
 									if action['action'] == "OFF":
-										d.turn_off()
+										for i in range(0,2):
+											d['device'].turn_off()
+											time.sleep(0.1)
 				else:
 					# Single fire action, just call with remote id and socket id
 					logger.debug("Single fire action")
@@ -124,9 +130,13 @@ def setButtonPower(energenie = None, button = None, state = "ON"):
 						for d in energenie['buttons']:
 							if (d['remote'] == action['remote']) and (d['socket'] == action['socket']):
 								if action['action'] == "ON":
-									d.turn_on()
+									for i in range(0,2):
+										d['device'].turn_on()
+										time.sleep(0.1)
 								if action['action'] == "OFF":
-									d.turn_off()
+									for i in range(0,2):
+										d['device'].turn_off()
+										time.sleep(0.1)
 		else:
 			# No power entries defined, just send a power signal to the defined remote and socket
 			logger.warn("No %s action entries defined - using default remote and socket" % action_type)
@@ -134,10 +144,14 @@ def setButtonPower(energenie = None, button = None, state = "ON"):
 			for d in energenie['buttons']:
 				if (d['remote'] == button['remote']) and (d['socket'] == button['socket']) and (d['text'] == button['text']):
 					if state == "ON":
-						d['device'].turn_on()
+						for i in range(0,2):
+							d['device'].turn_on()
+							time.sleep(0.1)
 						sent = True
 					if state == "OFF":
-						d['device'].turn_off()
+						for i in range(0,2):
+							d['device'].turn_off()
+							time.sleep(0.1)
 						sent = True
 			if sent:
 				logger.debug("Sent signal to %s.%s" % (str(hex(d['remote'])), d['socket']))

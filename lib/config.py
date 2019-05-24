@@ -115,7 +115,8 @@ SCREENS = {
 					'image'	: "btn_mt32.bmp",
 					'poweron' : [
 						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},	# Turn this remote socket on
-						{'tags' : ["speakers"], 'action' : "ON"},			# Turn on any device with a tag of 'speakers'
+						{'tags' : ["midi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},			# Turn on any device with a tag of 'speakers'
 					],
 					'poweroff' : [
 						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},	# Turn this remote socket off
@@ -127,8 +128,14 @@ SCREENS = {
 				2 : {
 					'text'	: "SC-8820",
 					'image'	: "btn_sc8820.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["midi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: ["midi"],
@@ -136,28 +143,44 @@ SCREENS = {
 				3 : {
 					'text'	: "SC-55",
 					'image'	: "btn_sc55.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["midi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: ["midi"],
 				},
 				4 : {
-					'text'	: "Mixer",
+					'text'	: "MIDI Switch",
 					'image'	: None,
-					'poweron'	: [],
-					'poweroff'	: [],
-					'remote'	: 0xA0008,
-					'socket'	: 2,
-					'tags'	: ["speakers"],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
+					'remote'	: 0x0000,
+					'socket'	: 1,
+					'tags'	: ["midi sink"],
 				},
 			},
 			'R' : {
 				1 : {
 					'text'	: "Dreamcast",
 					'image'	: "btn_dreamcast.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0008, 'socket' : 4, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0008, 'socket' : 4, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0008,
 					'socket'	: 4,
 					'tags'	: [],
@@ -165,8 +188,15 @@ SCREENS = {
 				2 : {
 					'text'	: "Saturn",
 					'image'	: "btn_saturn.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x00000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x00000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -174,8 +204,15 @@ SCREENS = {
 				3 : {
 					'text'	: "Master System",
 					'image'	: "btn_sms.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA000A, 'socket' : 2, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA000A, 'socket' : 2, 'action' : "OFF"},
+					],
 					'remote'	: 0xA000A,
 					'socket'	: 2,
 					'tags'	: [],
@@ -183,8 +220,15 @@ SCREENS = {
 				4 : {
 					'text'	: "Megadrive",
 					'image'	: "btn_megadrive.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA000A, 'socket' : 4, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA000A, 'socket' : 4, 'action' : "OFF"},
+					],
 					'remote'	: 0xA000A,
 					'socket'	: 4,
 					'tags'	: [],
@@ -208,8 +252,14 @@ SCREENS = {
 				2 : {
 					'text'	: "Playstation 2",
 					'image'	: "btn_playstation2.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0007, 'socket' : 4, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0007, 'socket' : 4, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0007,
 					'socket'	: 4,
 					'tags'	: [],
@@ -217,8 +267,14 @@ SCREENS = {
 				3 : {
 					'text'	: "Playstation 3",
 					'image'	: "btn_playstation3.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0007, 'socket' : 2, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0007, 'socket' : 2, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0007,
 					'socket'	: 2,
 					'tags'	: [],
@@ -226,8 +282,14 @@ SCREENS = {
 				4 : {
 					'text'	: "Playstation 4",
 					'image'	: "btn_playstation4.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0007, 'socket' : 3, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0007, 'socket' : 3, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0007,
 					'socket'	: 3,
 					'tags'	: [],
@@ -237,8 +299,14 @@ SCREENS = {
 				1 : {
 					'text'	: "Vita",
 					'image'	: "btn_playstationtv.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0009, 'socket' : 2, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0009, 'socket' : 2, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0009,
 					'socket'	: 2,
 					'tags'	: [],
@@ -246,8 +314,14 @@ SCREENS = {
 				2 : {
 					'text'	: "XBox",
 					'image'	: "btn_xbox.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0007, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0007, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0007,
 					'socket'	: 1,
 					'tags'	: [],
@@ -255,8 +329,14 @@ SCREENS = {
 				3 : {
 					'text'	: "Xbox 360",
 					'image'	: "btn_xbox360.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA0008, 'socket' : 3, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0008, 'socket' : 3, 'action' : "OFF"},
+					],
 					'remote'	: 0xA0008,
 					'socket'	: 3,
 					'tags'	: [],
@@ -264,15 +344,22 @@ SCREENS = {
 			},
 		},
 	},
-	# Second page
+	# Third page
 	3 : {
 		'BUTTON' : { 
 			'L' : {
 				1 : {
 					'text'	: "PC-Engine",
 					'image'	: "btn_pcengine.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA000A, 'socket' : 3, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA000A, 'socket' : 3, 'action' : "OFF"},
+					],
 					'remote'	: 0xA000A,
 					'socket'	: 3,
 					'tags'	: [],
@@ -280,17 +367,31 @@ SCREENS = {
 				2 : {
 					'text'	: "Turbo Duo",
 					'image'	: "btn_pcenginecd.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
 				},
 				3 : {
-					'text'	: "Atari Jaguar",
-					'image'	: "btn_atarijaguar.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'text'	: "ZX Spectrum",
+					'image'	: None,
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -298,8 +399,16 @@ SCREENS = {
 				4 : {
 					'text'	: "MSX",
 					'image'	: "btn_msx.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},		# Needed for keyboard/mouse switch
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -309,8 +418,16 @@ SCREENS = {
 				1 : {
 					'text'	: "Amiga 500",
 					'image'	: "btn_amiga500.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},		# Needed for keyboard/mouse switch
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -318,8 +435,16 @@ SCREENS = {
 				2 : {
 					'text'	: "Amiga 1200",
 					'image'	: "btn_amiga1200.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},		# Needed for keyboard/mouse switch
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -327,8 +452,15 @@ SCREENS = {
 				3 : {
 					'text'	: "Amstrad CPC",
 					'image'	: "btn_amstradcpc.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -336,8 +468,16 @@ SCREENS = {
 				4 : {
 					'text'	: "Atari ST",
 					'image'	: "btn_atarist.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},		# Needed for keyboard/mouse switch
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -345,15 +485,23 @@ SCREENS = {
 			},
 		},
 	},
-	# Second page
+	# Fourth page
 	4 : {
 		'BUTTON' : { 
 			'L' : {
 				1 : {
 					'text'	: "PC-9821",
 					'image'	: "btn_pc9821.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio selector"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -361,8 +509,16 @@ SCREENS = {
 				2 : {
 					'text'	: "Mac IICi",
 					'image'	: "btn_maciici.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio selector"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
@@ -370,20 +526,160 @@ SCREENS = {
 				3 : {
 					'text'	: "Risc PC 700",
 					'image'	: None,
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["vga sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio selector"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0x0000,
 					'socket'	: 1,
 					'tags'	: [],
 				},
 				4 : {
+					'text'	: "BBC Micro",
+					'image'	: None,
+					'poweron'	: [
+						{'remote' : 0xA0009, 'socket' : 3, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA0009, 'socket' : 3, 'action' : "OFF"},
+					],
+					'remote'	: 0xA0009,
+					'socket'	: 3,
+					'tags'	: [],
+				},
+			},
+			'R' : {
+				1 : {
+					'text'	: "Gamecube",
+					'image'	: "btn_gamecube.bmp",
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
+					'remote'	: 0x0000,
+					'socket'	: 1,
+					'tags'	: [],
+				},
+				2 : {
 					'text'	: "SNES",
 					'image'	: "btn_snes.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
+					'poweron'	: [
+						{'remote' : 0xA000A, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0xA000A, 'socket' : 1, 'action' : "OFF"},
+					],
 					'remote'	: 0xA000A,
 					'socket'	: 1,
 					'tags'	: [],
+				},
+				3 : {
+					'text'	: "NeoGeo AES",
+					'image'	: None,
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
+					'remote'	: 0x0000,
+					'socket'	: 1,
+					'tags'	: [],
+				},
+				4 : {
+					'text'	: "Atari Jaguar",
+					'image'	: "btn_atarijaguar.bmp",
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["scart sink"], 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
+					'remote'	: 0x0000,
+					'socket'	: 1,
+					'tags'	: [],	
+				}
+			},
+		},
+	},
+	# Page 5
+	5 : {
+		'BUTTON' : {
+			'L' : {
+				1 : {
+					'text' : "Monitor",
+					'image': None,
+					'poweron'   : [],
+					'poweroff'  : [],
+					'remote'    : 0xA0005,
+					'socket'    : 2,
+					'tags'  : ["hdmi sink", "vga sink", "scart sink"],
+				},
+				2 : {
+					'text' : "Scart Switch",
+					'image': None,
+					'poweron'   : [
+						{'remote' : 0xA0005, 'socket' : 3, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'  : [
+						{'remote' : 0xA0005, 'socket' : 3, 'action' : "OFF"},
+					],
+					'remote'    : 0xA0005,
+					'socket'    : 3,
+					'tags'  : ["scart sink"],
+				},
+				3 : {
+					'text' : "OSSC Scaler",
+					'image': None,
+					'poweron'   : [
+						{'remote' : 0xA0005, 'socket' : 4, 'action' : "ON"},
+						{'tags' : ["hdmi sink"], 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},
+					],
+					'poweroff'  : [
+						{'remote' : 0xA0005, 'socket' : 4, 'action' : "OFF"},
+					],
+					'remote'    : 0xA0005,
+					'socket'    : 4,
+					'tags'  : ["scart sink", "vga sink"],
+				},
+				4 : {
+					'text'	: "Audio Switch",
+					'image'	: None,
+					'poweron'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "ON"},
+						{'tags' : ["audio sink"], 'action' : "ON"},	
+					],
+					'poweroff'	: [
+						{'remote' : 0x0000, 'socket' : 1, 'action' : "OFF"},
+					],
+					'remote'	: 0x00000,
+					'socket'	: 1,
+					'tags'	: ["audio selector"],
 				},
 			},
 			'R' : {
@@ -394,7 +690,7 @@ SCREENS = {
 					'poweroff'	: [],
 					'remote'	: 0xA0009,
 					'socket'	: 1,
-					'tags'	: [],
+					'tags'	: ["hdmi sink"],
 				},
 				2 : {
 					'text'	: "VGA KVM",
@@ -403,7 +699,7 @@ SCREENS = {
 					'poweroff'	: [],
 					'remote'	: 0x0000,
 					'socket'	: 1,
-					'tags'	: [],
+					'tags'	: ["vga sink"],
 				},
 				3 : {
 					'text'	: "Speakers",
@@ -412,39 +708,20 @@ SCREENS = {
 					'poweroff'	: [],
 					'remote'	: 0xA0005,
 					'socket'	: 1,
-					'tags'	: ["speakers"],
+					'tags'	: ["audio sink"],
 				},
 				4 : {
-					'text'	: "Gamecube",
-					'image'	: "btn_gamecube.bmp",
+					'text'	: "Mixer",
+					'image'	: None,
 					'poweron'	: [],
 					'poweroff'	: [],
-					'remote'	: 0x0000,
-					'socket'	: 1,
-					'tags'	: [],
+					'remote'	: 0xA0008,
+					'socket'	: 2,
+					'tags'	: ["audio sink"],
 				},
-			},
-		},
+			}
+		}
 	},
-        5 : {
-                'BUTTON' : {
-                            'L' : {
-                                1 : {
-                                        'text' : "Monitor",
-                                        'image': None,
-                                        'poweron'   : [],
-                                        'poweroff'  : [],
-                                        'remote'    : 0xA0005,
-                                        'socket'    : 2,
-                                        'tags'  : [],
-                                },
-
-                        },
-                            'R' : {
-
-                        }
-                }
-        },
 }
 
 # A list of any power monitor devices (MIHO004) that we can listen for
