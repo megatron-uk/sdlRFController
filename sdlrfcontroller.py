@@ -77,6 +77,47 @@ class dummyDevice():
 		d = SimpleNamespace(**readings)
 		return d
 
+def load_energenie(elib = False):
+	
+	energenie_monitors = []
+	energenie_buttons = []
+	
+	if elib:
+		elib.init()
+		# Load all energenie sockets
+		for b in getAllButtons():
+			b['device'] = elib.Devices.ENER002((b['remote'], b['socket']))
+			energenie_buttons.append(b)
+			logger.debug("Adding device %s.%s" % (str(hex(b['remote'])), b['socket']))
+			
+		# Load all energenie power monitor devices
+		for k in config.POWER_MONITORS:
+			d = elib.registry.get(config.POWER_MONITORS[k]['deviceid'])
+			#d = elib.Devices.MIHO004(device_id = config.POWER_MONITORS[k]['deviceid'])
+			energenie_monitors.append(d)
+			logger.debug("Adding monitor %s" % (config.POWER_MONITORS[k]['text']))
+			
+		logger.info("Added %s Energenie power socket devices" % len(energenie_buttons))
+		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))
+	else:
+		logger.warn("Energenie radio functions not available")
+		# Add some dummy energy monitoring devices
+		dd1 = dummyDevice()
+		dd2 = dummyDevice()
+		dd3 = dummyDevice()
+		energenie_monitors.append(dd1)
+		energenie_monitors.append(dd2)
+		energenie_monitors.append(dd3)
+		energenie_monitors.append(dd2)
+		
+	energenie = {
+		'lib' : elib,
+		'buttons' : energenie_buttons,
+		'monitors' : energenie_monitors,
+	}
+	
+	return energenie
+
 def sdlRFController():
 	
 	# SDL only listens for these types of input, all others are ignored
@@ -123,39 +164,8 @@ def sdlRFController():
 	# Start up the energenie radio interface library
 	energenie_buttons = []
 	energenie_monitors = []
-	if elib:
-		elib.init()
-		# Load all energenie sockets
-		for b in getAllButtons():
-			b['device'] = elib.Devices.ENER002((b['remote'], b['socket']))
-			energenie_buttons.append(b)
-			logger.debug("Adding device %s.%s" % (str(hex(b['remote'])), b['socket']))
-			
-		# Load all energenie power monitor devices
-		for k in config.POWER_MONITORS:
-			d = elib.registry.get(config.POWER_MONITORS[k]['deviceid'])
-			#d = elib.Devices.MIHO004(device_id = config.POWER_MONITORS[k]['deviceid'])
-			energenie_monitors.append(d)
-			logger.debug("Adding monitor %s" % (config.POWER_MONITORS[k]['text']))
-			
-		logger.info("Added %s Energenie power socket devices" % len(energenie_buttons))
-		logger.info("Added %s Energenie power monitor devices" % len(energenie_monitors))
-	else:
-		logger.warn("Energenie radio functions not available")
-		# Add some dummy energy monitoring devices
-		dd1 = dummyDevice()
-		dd2 = dummyDevice()
-		dd3 = dummyDevice()
-		energenie_monitors.append(dd1)
-		energenie_monitors.append(dd2)
-		energenie_monitors.append(dd3)
-		energenie_monitors.append(dd2)
-		
-	energenie = {
-		'lib' : elib,
-		'buttons' : energenie_buttons,
-		'monitors' : energenie_monitors,
-	}		
+	
+	energenie = load_energenie(elib)
 	
 	# Show page 1
 	renderPage(window = window, page = page)
@@ -175,7 +185,7 @@ def sdlRFController():
 	old_screen = "page"
 	button = False
 	clicked = False
-	redraw = True
+	redraw = False
 	loop_count = 0
 	old_button = {'name' : None}
 	old_time = time.time()
@@ -199,13 +209,20 @@ def sdlRFController():
 		
 		# Read any broadcast power events and update data
 		if energenie['lib']:
-			energenie['lib'].loop()
-			for d in energenie['monitors']:
-				try:
-					pwr = d.get_power()
-					logger.debug(pwr)
-				except:
-					pass
+			try:
+				energenie['lib'].loop()
+				for d in energenie['monitors']:
+					try:
+						pwr = d.get_power()
+						logger.debug(pwr)
+					except:
+						logger.debug("No power readings for %s" % d)
+						pass
+			except Exception as e:
+				logger.warn("Error while running Energenie loop")
+				logger.warn(e)
+				logger.warn("Reloading energenie library...")
+				energenie = load_energenie(elib = elib)
 		
 		# Reset any touchscreen event
 		ts_event = False
@@ -235,7 +252,7 @@ def sdlRFController():
 		#############################################################
 		
 		# Read an SDL event, if there is one, or proceed to process a touchscreen event
-		while (SDL_PollEvent(ctypes.byref(sdl_event))) or (ts_event != False):
+		if (SDL_PollEvent(ctypes.byref(sdl_event))) or (ts_event != False):
 			loop_count += 1
 			
 			if (sdl_event and (sdl_event.type)) == SDL_QUIT:
@@ -400,6 +417,7 @@ def sdlRFController():
 				
 				# If we pressed the keyboard Q/q key, exit from the running application
 				if (sdl_event and (sdl_event.key.keysym.sym == SDLK_q)):
+					logger.warn("Got quit signal")
 					running = False
 				
 				# If we pressed the right cursor key, or clicked on the right button, scroll one page right
@@ -429,6 +447,9 @@ def sdlRFController():
 				#########################################
 				
 				ts_event = False
+		else:
+			# If no input, sleep again for a short time
+			time.sleep(0.1)
 			
 		######################################################
 		#
@@ -455,6 +476,9 @@ def sdlRFController():
 			
 			# Flush updated screen buffer to display
 			window.update(transition = transition)
+
+			# We're not bothered about high fps refresh, so sleep again
+			time.sleep(config.REFRESH_TIME)
 	
 	# Stop radio
 	if energenie['lib']:

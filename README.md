@@ -12,6 +12,10 @@ It can process sequences of actions to automate turning on or off multiple devic
 
 All mapped to a single button on the touchscreen.
 
+## What does it look like?
+
+
+
 ---
 
 ## Requirements
