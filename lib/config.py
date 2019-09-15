@@ -7,8 +7,11 @@ REFRESH_TIME = 0.05
 # surfaces and fonts and reload them again
 CACHE_CLEAR_TIME = 100
 
+# Listen for broadcast messages every N amount of loops
+POWER_LISTEN_TIME = 10
+
 # Enable more verbose output
-DEBUG = 1
+DEBUG = 0
 INFO = 1
 
 # Screen size
@@ -743,6 +746,15 @@ SCREENS = {
 					'socket'    : 1,
 					'tags'  : [],
 				},
+                                3 : {
+                                        'text' : "Windows PC",
+                                        'image': None,
+                                        'poweron'   : [],
+                                        'poweroff'  : [],
+                                        'remote'    : 0xA0003,
+                                        'socket'    : 4,
+                                        'tags'  : ["hdmi sink", "audio sink"],
+                                },
 			},
                         'R' : {
 
@@ -750,6 +762,9 @@ SCREENS = {
 		},
 	},
 }
+
+# Which of the screens, above, should be displayed by default
+DEFAULT_PAGE = 5
 
 # A list of any power monitor devices (MIHO004) that we can listen for
 # broadcast signals from, to get the current power draw. This data can
