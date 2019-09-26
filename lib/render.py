@@ -739,44 +739,45 @@ def renderPowerMon(window = None, page = 1, button_clicked = None, flash = False
 		##########################################
 		
 		x_col = x_col1
-		for power_monitor in energenie['monitors']:
-			
-			power = power_monitor.get_readings()
-			if power.voltage != None:
-				voltage = "%sv" % power.voltage
-			else:
-				voltage = "n/a"
+		if (energenie is not None) and ("monitors" in energenie.keys()):
+			for power_monitor in energenie['monitors']:
 				
-			if power.frequency != None:
-				frequency = "%2.1fHz" % power.frequency
-			else:
-				frequency = "n/a"
+				power = power_monitor.get_readings()
+				if power.voltage != None:
+					voltage = "%sv" % power.voltage
+				else:
+					voltage = "n/a"
+					
+				if power.frequency != None:
+					frequency = "%2.1fHz" % power.frequency
+				else:
+					frequency = "n/a"
+					
+				current = "0" #% power.current
+				apparent_power = "0" #% power.apparent_power
 				
-			current = "0" #% power.current
-			apparent_power = "0" #% power.apparent_power
-			
-			if power.reactive_power != None:
-				reactive_power = "%3.0fw" % power.reactive_power
-			else:
-				reactive_power = "n/a"
-			
-			if power.real_power != None:
-				real_power = "%3.0fw" % power.real_power
-			else:
-				real_power = "n/a" #% power.real_power
-			
-			y = y_start
-			
-			for sensor in [voltage, frequency, current, apparent_power, reactive_power, real_power]:
-			
-				text_value_surface = TTF_RenderText_Blended(font_s, str.encode(str(sensor)), font_colour)
-				g.regS(text_value_surface)
-				text_value_rect = SDL_Rect(x_col, y, text_value_surface.contents.w, text_value_surface.contents.h)
-				SDL_BlitSurface(text_value_surface, None, window.backbuffer, text_value_rect)
+				if power.reactive_power != None:
+					reactive_power = "%3.0fw" % power.reactive_power
+				else:
+					reactive_power = "n/a"
 				
-				y = y + text_sensor_surface.contents.h + 5
-	
-			x_col += col_width
+				if power.real_power != None:
+					real_power = "%3.0fw" % power.real_power
+				else:
+					real_power = "n/a" #% power.real_power
+				
+				y = y_start
+				
+				for sensor in [voltage, frequency, current, apparent_power, reactive_power, real_power]:
+				
+					text_value_surface = TTF_RenderText_Blended(font_s, str.encode(str(sensor)), font_colour)
+					g.regS(text_value_surface)
+					text_value_rect = SDL_Rect(x_col, y, text_value_surface.contents.w, text_value_surface.contents.h)
+					SDL_BlitSurface(text_value_surface, None, window.backbuffer, text_value_rect)
+					
+					y = y + text_sensor_surface.contents.h + 5
+		
+				x_col += col_width
 			
 	#elif graph is "":
 	#	pass

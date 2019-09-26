@@ -331,15 +331,16 @@ def sdlRFController():
 									double_click_time = time.time() - old_time
 									if double_click_time < config.BUTTON_BOUNCE_TIME:
 										# Break from loop and do no further processing of this button click
-										logger.debug("Ignoring touchscreen input - possible button bounce [%.2fs < %ss]" % (double_click_time, config.BUTTON_BOUNCE_TIME))
+										logger.warn("Ignoring touchscreen input - possible button bounce [%.2fs < %ss]" % (double_click_time, config.BUTTON_BOUNCE_TIME))
 										ts_event = False
-										break
+										ignore_loop = True
 									else:
 										logger.debug("Accepting touchscreen input - long double click [%.2fs]" % double_click_time)
-								
-						old_button = button
-						old_time = time.time()
-						last_ts = ts_event['time']
+							
+						if ignore_loop == False:
+							old_button = button
+							old_time = time.time()
+							last_ts = ts_event['time']
 					
 				#############################################################
 				#
@@ -489,6 +490,20 @@ def sdlRFController():
 
 			# We're not bothered about high fps refresh, so sleep again
 			time.sleep(config.REFRESH_TIME)
+	
+	logger.info("=======================")
+	logger.info("Exit status.......")
+	logger.info("Running: %s" % running)
+	logger.info("Button: %s" % button)
+	logger.info("Clicked: %s" % clicked)
+	logger.info("Graph mode: %s" % graph_mode)
+	logger.info("Screen: %s" % screen)
+	logger.info("Page: %s" % page)
+	logger.info("Loop count: %s" % loop_count)
+	logger.info("Power count: %s" % power_count)
+	logger.info("TS Event: %s" % ts_event)
+	logger.info("SDL Event: %s" % sdl_event)
+	logger.info("=======================")
 	
 	# Stop radio
 	if energenie['lib']:
