@@ -14,7 +14,21 @@ All mapped to a single button on the touchscreen.
 
 ## What does it look like?
 
+The main interface:
 
+![Main interface](docs/pi_buttons_2.jpg)
+
+Power consumption monitor (polling 4 [MiiHome Smart monitor plugs](http://www.energenie.co.uk/catalogue/product/MIHO004))
+
+![Power Monitor](docs/pi_monitor.jpg)
+
+System status screen:
+
+![System status](docs/pi_status.jpg)
+
+Homemade cradle to hold the Pi:
+
+![Cradle](docs/pi_cradle.jpg)
 
 ---
 
