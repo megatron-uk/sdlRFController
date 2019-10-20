@@ -747,6 +747,27 @@ SCREENS = {
 					'tags'  : [],
 				},
                                 3 : {
+                                        'text'  : "Compressor",
+                                        'image' : None,
+                                        'poweron'   : [],
+                                        'poweroff'  : [],
+                                        'remote'    : 0xA0003,
+                                        'socket'    : 3,
+                                        'tags'      : [],
+
+                                },
+                                4 : {
+                                        'text'  : "Spray Booth",
+                                        'image' : None,
+                                        'poweron'   : [],
+                                        'poweroff'  : [],
+                                        'remote'    : 0xA0003,
+                                        'socket'    : 2,
+                                        'tags'      : [],
+                                },
+                        },
+                        'R' : {
+                                1 : {
                                         'text' : "Windows PC",
                                         'image': None,
                                         'poweron'   : [],
@@ -756,9 +777,6 @@ SCREENS = {
                                         'tags'  : ["hdmi sink", "audio sink"],
                                 },
 			},
-                        'R' : {
-
-                        },
 		},
 	},
 }
