@@ -105,7 +105,7 @@ BUTTON_HEIGHT = 60
 BUTTON_FLASH_DELAY = 0.1
 
 # How long between presses a button will respond to touchscreen
-BUTTON_BOUNCE_TIME = 0.25
+BUTTON_BOUNCE_TIME = 0.1
 
 # A structure defining which buttons should be on which pages
 SCREENS = {
@@ -776,6 +776,21 @@ SCREENS = {
                                         'socket'    : 4,
                                         'tags'  : ["hdmi sink", "audio sink"],
                                 },
+                                2 : {
+                                        'text' : "Retro PC",
+                                        'image' : None,
+                                        'poweron'  : [
+                                            {'remote' : 0xA0008, 'socket' : 1, 'action' : "ON"},
+                                            {'tags' : ["hdmi sink"], 'action' : "ON"},
+                                            {'tags' : ["audio sink"], 'action' : "ON"},
+                                        ],
+                                        'poweroff' : [
+                                            {'remote' : 0xA0008, 'socket' : 1, 'action' : "OFF"},
+                                        ],
+                                        'remote'   : 0xA0008,
+                                        'socket'   : 1,
+                                        'tags'  : [],
+                                }
 			},
 		},
 	},

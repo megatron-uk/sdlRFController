@@ -503,15 +503,18 @@ def renderPage(window = None, page = 1, button_clicked = None, flash = False, po
 	# Are we flashing a clicked button?
 	if flash and (button_clicked is not None):
 		# Render standard screen
+		logger.info("normal screen")
 		window.update()
+		time.sleep(config.BUTTON_FLASH_DELAY)
 		
 		# Turn clicked button a different colour
 		select_rect = SDL_Rect(button_clicked['x1'], button_clicked['y1'], button_clicked['x2'] - button_clicked['x1'], button_clicked['y2'] - button_clicked['y1'])
 		SDL_FillRect(window.backbuffer, select_rect, window.highlight_colour)
 
 		# Re-render screen
+		logger.info("flash screen")
 		window.update()
-		time.sleep(config.BUTTON_FLASH_DELAY)
+		time.sleep(config.BUTTON_FLASH_DELAY * 2)
 		
 		# Render standard button content again
 		SDL_FillRect(window.backbuffer, select_rect, window.background_colour)
@@ -529,6 +532,7 @@ def renderPage(window = None, page = 1, button_clicked = None, flash = False, po
 			SDL_BlitSurface(text_surface, None, window.backbuffer, btn_rect)
 		
 	# 3.
+	logger.info("normal screen")
 	window.update()
 	g.cleanUp()
 	
