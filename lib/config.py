@@ -675,7 +675,6 @@ SCREENS = {
 					'image'	: None,
 					'poweron'	: [
 						{'remote' : 0xA0004, 'socket' : 3, 'action' : "ON"},
-						{'tags' : ["audio sink"], 'action' : "ON"},	
 					],
 					'poweroff'	: [
 						{'remote' : 0xA0004, 'socket' : 3, 'action' : "OFF"},

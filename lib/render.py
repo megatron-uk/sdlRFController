@@ -362,9 +362,9 @@ def renderStatus(window = None, button_clicked = None, flash = False, power_mode
 	y_pos = 5
 	
 	# IP Address
-	na = psutil.net_if_addrs()
-	ns = psutil.net_if_stats()
-	text_ip = "IP: "
+	na = psutil.net_if_addrs()['eth0'][0][1]
+	#ns = psutil.net_if_stats()
+	text_ip = "IP: %s" % na
 	text_surface = TTF_RenderText_Blended(font, str.encode(text_ip), font_colour)
 	g.regS(text_surface)
 	btn_rect = SDL_Rect(x_pos, y_pos, text_surface.contents.w, text_surface.contents.h)
