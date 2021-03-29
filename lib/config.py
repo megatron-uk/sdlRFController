@@ -246,9 +246,15 @@ SCREENS = {
 				1 : {
 					'text'	: "Playstation",
 					'image'	: "btn_playstation.bmp",
-					'poweron'	: [],
-					'poweroff'	: [],
-					'remote'	: 0x0000,
+					'poweron'	: [
+                                            {'remote' : 0xA0003, 'socket' : 1, 'action' : "ON"},
+                                            {'tags' : ["scart sink"], 'action' : "ON"}, 
+                                            {'tags' : ["audio sink"], 'action' : "ON"},
+                                        ],
+					'poweroff'	: [
+                                            {'remote' : 0xA0003, 'socket' : 1, 'action' : "OFF"},
+                                        ],
+					'remote'	: 0xA0003,
 					'socket'	: 1,
 					'tags'	: [],
 				},
@@ -527,7 +533,7 @@ SCREENS = {
 					'tags'	: [],
 				},
 				3 : {
-					'text'	: "Risc PC 700",
+					'text'	: "486 PC",
 					'image'	: None,
 					'poweron'	: [
 						{'remote' : 0xA0006, 'socket' : 4, 'action' : "ON"},
@@ -745,51 +751,59 @@ SCREENS = {
 					'socket'    : 1,
 					'tags'  : [],
 				},
-                                3 : {
-                                        'text'  : "Compressor",
-                                        'image' : None,
-                                        'poweron'   : [],
-                                        'poweroff'  : [],
-                                        'remote'    : 0xA0003,
-                                        'socket'    : 3,
-                                        'tags'      : [],
+				3 : {
+						'text'  : "Airbrush Kit",
+						'image' : None,
+						'poweron'   : [],
+						'poweroff'  : [],
+						'remote'    : 0xA0003,
+						'socket'    : 3,
+						'tags'      : [],
 
-                                },
-                                4 : {
-                                        'text'  : "Spray Booth",
-                                        'image' : None,
-                                        'poweron'   : [],
-                                        'poweroff'  : [],
-                                        'remote'    : 0xA0003,
-                                        'socket'    : 2,
-                                        'tags'      : [],
-                                },
-                        },
-                        'R' : {
-                                1 : {
-                                        'text' : "Windows PC",
-                                        'image': None,
-                                        'poweron'   : [],
-                                        'poweroff'  : [],
-                                        'remote'    : 0xA0003,
-                                        'socket'    : 4,
-                                        'tags'  : ["hdmi sink", "audio sink"],
-                                },
-                                2 : {
-                                        'text' : "Retro PC",
-                                        'image' : None,
-                                        'poweron'  : [
-                                            {'remote' : 0xA0008, 'socket' : 1, 'action' : "ON"},
-                                            {'tags' : ["hdmi sink"], 'action' : "ON"},
-                                            {'tags' : ["audio sink"], 'action' : "ON"},
-                                        ],
-                                        'poweroff' : [
-                                            {'remote' : 0xA0008, 'socket' : 1, 'action' : "OFF"},
-                                        ],
-                                        'remote'   : 0xA0008,
-                                        'socket'   : 1,
-                                        'tags'  : [],
-                                }
+				},
+				4 : {
+						'text'  : "X68000",
+						'image' : None,
+						'poweron'   : [
+								{'remote' : 0xA0003, 'socket' : 2, 'action' : "ON"},
+							{'tags' : ["vga sink"], 'action' : "ON"},
+							{'tags' : ["hdmi sink"], 'action' : "ON"},
+							{'tags' : ["audio selector"], 'action' : "ON"},
+							{'tags' : ["audio sink"], 'action' : "ON"},
+						],
+						'poweroff'  : [
+								{'remote' : 0xA0003, 'socket' : 2, 'action' : "OFF"},
+						],
+						'remote'    : 0xA0003,
+						'socket'    : 2,
+						'tags'      : [],
+				},
+			},
+			'R' : {
+				1 : {
+						'text' : "Windows PC",
+						'image': None,
+						'poweron'   : [],
+						'poweroff'  : [],
+						'remote'    : 0xA0003,
+						'socket'    : 4,
+						'tags'  : ["hdmi sink", "audio sink"],
+				},
+				2 : {
+						'text' : "Retro PC",
+						'image' : None,
+						'poweron'  : [
+							{'remote' : 0xA0008, 'socket' : 1, 'action' : "ON"},
+							{'tags' : ["hdmi sink"], 'action' : "ON"},
+							{'tags' : ["audio sink"], 'action' : "ON"},
+						],
+						'poweroff' : [
+							{'remote' : 0xA0008, 'socket' : 1, 'action' : "OFF"},
+						],
+						'remote'   : 0xA0008,
+						'socket'   : 1,
+						'tags'  : [],
+				}
 			},
 		},
 	},
